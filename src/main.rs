@@ -1,5 +1,5 @@
 mod bitbucket;
-use actix_web::{web, App, HttpServer, Responder};
+use actix_web::{web, App, HttpServer, Responder, HttpResponse};
 use std::env;
 use bitbucket::repo::{bitbucket_repo_handler, bitbucket_list_repos_handler, BitbucketAuth};
 use bitbucket::proxy::bitbucket_proxy_handler;
@@ -10,6 +10,20 @@ struct MCPInfo {
     name: String,
     version: String,
     description: String,
+    protocol: String,
+}
+
+#[derive(serde::Serialize)]
+struct MCPHealth {
+    status: String,
+}
+
+#[derive(serde::Serialize)]
+struct MCPContext {
+    name: String,
+    version: String,
+    description: String,
+    // Add more fields as required by your MCP context
 }
 
 async fn mcp_info() -> impl Responder {
@@ -17,6 +31,21 @@ async fn mcp_info() -> impl Responder {
         name: "bitbucket-mcp".to_string(),
         version: "0.1.0".to_string(),
         description: "MCP server for Bitbucket integration".to_string(),
+        protocol: "model-context-protocol/1.0".to_string(),
+    })
+}
+
+async fn mcp_health() -> impl Responder {
+    web::Json(MCPHealth {
+        status: "ok".to_string(),
+    })
+}
+
+async fn mcp_context() -> impl Responder {
+    web::Json(MCPContext {
+        name: "bitbucket-mcp".to_string(),
+        version: "0.1.0".to_string(),
+        description: "Bitbucket context provider for MCP".to_string(),
     })
 }
 
@@ -33,6 +62,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(auth_data.clone())
             .route("/mcp/info", web::get().to(mcp_info))
+            .route("/mcp/health", web::get().to(mcp_health))
+            .route("/mcp/context", web::get().to(mcp_context))
             .route("/bitbucket/repo", web::post().to(bitbucket_repo_handler))
             .route("/bitbucket/list_repos", web::post().to(bitbucket_list_repos_handler))
             .route("/bitbucket/proxy", web::post().to(bitbucket_proxy_handler))
