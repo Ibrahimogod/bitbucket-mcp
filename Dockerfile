@@ -3,6 +3,8 @@ FROM rust:1.87 as builder
 WORKDIR /app
 # Install musl-tools for static linking
 RUN apt-get update && apt-get install -y musl-tools && rm -rf /var/lib/apt/lists/*
+# Add musl target for Rust
+RUN rustup target add x86_64-unknown-linux-musl
 # Optimize Docker cache by copying only Cargo files first
 COPY Cargo.toml Cargo.lock ./
 RUN mkdir src && echo "fn main() {}" > src/main.rs
