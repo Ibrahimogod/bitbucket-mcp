@@ -25,9 +25,9 @@ This project provides a Model Context Protocol (MCP) server for Bitbucket integr
 
 ```powershell
 # Pull and run the latest image from GitHub Container Registry
-# Replace <your_email> and <your_app_password> with your Bitbucket credentials
+# Replace <your_username> and <your_app_password> with your Bitbucket credentials
 
-docker run -e BITBUCKET_API_USERNAME=<your_email> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
+docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
 ```
 - The image is published at: [ghcr.io/ibrahimogod/bitbucket-mcp](https://github.com/users/Ibrahimogod/packages/container/bitbucket-mcp)
 
@@ -37,13 +37,13 @@ docker run -e BITBUCKET_API_USERNAME=<your_email> -e BITBUCKET_APP_PASSWORD=<you
 # Build the Docker image (no OpenSSL required)
 docker build --no-cache -t bitbucket-mcp-rustls-only .
 
-docker run -e BITBUCKET_API_USERNAME=<your_email> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 bitbucket-mcp-rustls-only
+docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 bitbucket-mcp-rustls-only
 ```
 
 ### 3. Local Development
 
 ```powershell
-$env:BITBUCKET_API_USERNAME="<your_email>"
+$env:BITBUCKET_API_USERNAME="<your_username>"
 $env:BITBUCKET_APP_PASSWORD="<your_app_password>"
 cargo run --release --bin bitbucket_stdio
 ```

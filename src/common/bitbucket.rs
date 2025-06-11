@@ -9,26 +9,26 @@ use rmcp::{Error as McpError, ServerHandler, model::*, schemars, tool};
 
 #[derive(Clone)]
 pub struct BitbucketClient {
-    pub api_email: String,
-    pub api_token: String,
+    pub api_username: String,
+    pub app_password: String,
     pub client: Client,
 }
 
 impl BitbucketClient {
     pub fn from_env() -> Result<Self> {
-        let api_email = env::var("BITBUCKET_API_EMAIL")
-            .map_err(|_| anyhow!("BITBUCKET_API_EMAIL env var not set. Please set it to your Atlassian email."))?;
-        let api_token = env::var("BITBUCKET_API_TOKEN")
-            .map_err(|_| anyhow!("BITBUCKET_API_TOKEN env var not set. Please set it to your Bitbucket API token."))?;
+        let api_username = env::var("BITBUCKET_API_USERNAME")
+            .map_err(|_| anyhow!("BITBUCKET_API_USERNAME env var not set. Please set it to your Atlassian email."))?;
+        let app_password = env::var("BITBUCKET_APP_PASSWORD")
+            .map_err(|_| anyhow!("BITBUCKET_APP_PASSWORD env var not set. Please set it to your Bitbucket API token."))?;
         Ok(Self {
-            api_email,
-            api_token,
+            api_username,
+            app_password,
             client: Client::new(),
         })
     }
 
     fn apply_auth<'a>(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
-        req.basic_auth(&self.api_email, Some(&self.api_token))
+        req.basic_auth(&self.api_username, Some(&self.app_password))
     }
 
     pub async fn get_user(&self) -> Result<serde_json::Value> {
