@@ -48,13 +48,19 @@ $env:BITBUCKET_APP_PASSWORD="<your_app_password>"
 cargo run --release --bin bitbucket_stdio
 ```
 
-## Endpoints
-- `POST /bitbucket/repo` — Get repository details
-- `POST /bitbucket/list_repos` — List repositories in a workspace
-- `POST /bitbucket/pull_request` — List or get pull requests
-- `POST /bitbucket/proxy` — Proxy arbitrary Bitbucket API requests
+## Available MCP Tool Operations
+This MCP server exposes Bitbucket operations as MCP tools, not as HTTP endpoints. You can use these operations via an MCP-compatible client:
+- Get Bitbucket user info
+- List Bitbucket workspaces
+- List repositories in a workspace
+- List pull requests for a repository
+- List issues for a repository
+- Get workspace details
+- Get repository details
+- List branches, tags, and commits for a repository
+- List pipelines, deployments, downloads, webhooks, snippets, projects, branch restrictions, commit statuses, and users
 
-See `src/common/bitbucket.rs` for request/response formats.
+See `src/common/bitbucket.rs` for the full list of supported operations and their parameters.
 
 ## Bitbucket Authentication
 - **Recommended**: [Create a Bitbucket App Password](https://bitbucket.org/account/settings/app-passwords/) with at least `Repository:Read` and `Pull requests:Read` permissions.
