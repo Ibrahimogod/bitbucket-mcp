@@ -20,3 +20,6 @@ tracing-subscriber = { version = "0.3", features = [
     "fmt",
 ] }
 tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+mockito = "0.31"

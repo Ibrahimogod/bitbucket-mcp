@@ -12,13 +12,14 @@ pub struct BitbucketClient {
     pub api_username: String,
     pub app_password: String,
     pub client: Client,
+    pub base_url: String,
 }
 
 impl BitbucketClient {
     // --- Pull Requests ---
     /// Create a bitbucket pull request
     pub async fn create_pullrequest(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/pullrequests", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
         Ok(resp.json().await?)
@@ -26,85 +27,135 @@ impl BitbucketClient {
 
     /// Get bitbucket pull request details
     pub async fn get_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Update a bitbucket pull request
     pub async fn update_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.put(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Approve a bitbucket pull request
     pub async fn approve_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/approve", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/approve", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.post(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Unapprove a bitbucket pull request
     pub async fn unapprove_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/approve", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/approve", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.delete(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Decline a bitbucket pull request
     pub async fn decline_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/decline", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/decline", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.post(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Merge a bitbucket pull request
     pub async fn merge_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: Option<serde_json::Value>) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/merge", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/merge", self.base_url, workspace, repo_slug, pr_id);
         let req = if let Some(b) = body {
             self.client.post(&url).json(&b)
         } else {
             self.client.post(&url)
         };
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// List bitbucket pull request comments
     pub async fn list_pullrequest_comments(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/comments", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/comments", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Add a bitbucket pull request comment
     pub async fn add_pullrequest_comment(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/comments", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/comments", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// List bitbucket pull request activity
     pub async fn list_pullrequest_activity(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/activity", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/activity", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Get bitbucket pull request diff
     pub async fn get_pullrequest_diff(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<String> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/diff", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/diff", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.text().await?)
     }
 
@@ -118,25 +169,40 @@ impl BitbucketClient {
 
     /// List bitbucket pull request tasks
     pub async fn list_pullrequest_tasks(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/tasks", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/tasks", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Add a bitbucket pull request task
     pub async fn add_pullrequest_task(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/tasks", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/tasks", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Get bitbucket pull request diffstat
     pub async fn get_pullrequest_diffstat(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/diffstat", workspace, repo_slug, pr_id);
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/diffstat", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub fn from_env() -> Result<Self> {
@@ -148,6 +214,7 @@ impl BitbucketClient {
             api_username,
             app_password,
             client: Client::new(),
+            base_url: "https://api.bitbucket.org/2.0".to_string(),
         })
     }
 
@@ -156,56 +223,85 @@ impl BitbucketClient {
     }
 
     pub async fn get_user(&self) -> Result<serde_json::Value> {
-        let url = "https://api.bitbucket.org/2.0/user";
-        let req = self.client.get(url);
+        let url = format!("{}/user", self.base_url);
+        let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     pub async fn list_workspaces(&self) -> Result<serde_json::Value> {
-        let url = "https://api.bitbucket.org/2.0/workspaces";
-        let req = self.client.get(url);
+        let url = format!("{}/workspaces", self.base_url);
+        let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     pub async fn list_repositories(&self, workspace: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}", workspace);
+        let url = format!("{}/repositories/{}", self.base_url, workspace);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     pub async fn list_pullrequests(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests", workspace, repo_slug);
-        tracing::info!("Requesting pull requests from URL: {}", url);
+        let url = format!("{}/repositories/{}/{}/pullrequests", self.base_url, workspace, repo_slug);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
-        let status = resp.status();
-        let text = resp.text().await?;
-        tracing::info!("Bitbucket response status: {}", status);
-        tracing::info!("Bitbucket response body: {}", text);
-        let json: serde_json::Value = serde_json::from_str(&text)?;
-        Ok(json)
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
+        Ok(resp.json().await?)
     }
 
     pub async fn list_issues(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/issues", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/issues", self.base_url, workspace, repo_slug);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     pub async fn get_workspace(&self, workspace: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/workspaces/{}", workspace);
+        let url = format!("{}/workspaces/{}", self.base_url, workspace);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn get_repository(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}", self.base_url, workspace, repo_slug);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn list_branches(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
@@ -299,9 +395,17 @@ impl BitbucketClient {
 
     /// Delete a repository in a workspace
     pub async fn delete_repository(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}", self.base_url, workspace, repo_slug);
         let req = self.client.delete(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
+        if resp.status() == reqwest::StatusCode::NO_CONTENT {
+            return Ok(serde_json::json!({}));
+        }
         Ok(resp.json().await?)
     }
     // --- Branches ---
@@ -314,9 +418,17 @@ impl BitbucketClient {
     }
     /// Delete a branch in a repository
     pub async fn delete_branch(&self, workspace: &str, repo_slug: &str, branch: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/refs/branches/{}", workspace, repo_slug, branch);
+        let url = format!("{}/repositories/{}/{}/refs/branches/{}", self.base_url, workspace, repo_slug, branch);
         let req = self.client.delete(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
+        if resp.status() == reqwest::StatusCode::NO_CONTENT {
+            return Ok(serde_json::json!({}));
+        }
         Ok(resp.json().await?)
     }
     // --- Branching Model ---
@@ -367,9 +479,17 @@ impl BitbucketClient {
         Ok(resp.json().await?)
     }
     pub async fn delete_issue(&self, workspace: &str, repo_slug: &str, issue_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/issues/{}", workspace, repo_slug, issue_id);
+        let url = format!("{}/repositories/{}/{}/issues/{}", self.base_url, workspace, repo_slug, issue_id);
         let req = self.client.delete(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
+        if resp.status() == reqwest::StatusCode::NO_CONTENT {
+            return Ok(serde_json::json!({}));
+        }
         Ok(resp.json().await?)
     }
     // --- Pipelines ---
@@ -393,9 +513,17 @@ impl BitbucketClient {
         Ok(resp.json().await?)
     }
     pub async fn delete_project(&self, workspace: &str, project_key: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/workspaces/{}/projects/{}", workspace, project_key);
+        let url = format!("{}/workspaces/{}/projects/{}", self.base_url, workspace, project_key);
         let req = self.client.delete(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
+        if resp.status() == reqwest::StatusCode::NO_CONTENT {
+            return Ok(serde_json::json!({}));
+        }
         Ok(resp.json().await?)
     }
     // --- Snippets ---
@@ -406,9 +534,17 @@ impl BitbucketClient {
         Ok(resp.json().await?)
     }
     pub async fn delete_snippet(&self, workspace: &str, snippet_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/snippets/{}/{}", workspace, snippet_id);
+        let url = format!("{}/snippets/{}/{}", self.base_url, workspace, snippet_id);
         let req = self.client.delete(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
+        if resp.status() == reqwest::StatusCode::NO_CONTENT {
+            return Ok(serde_json::json!({}));
+        }
         Ok(resp.json().await?)
     }
     // --- Source ---
