@@ -30,10 +30,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract short SHA
+        id: vars
+        run: echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ steps.repo_owner.outputs.owner }}/bitbucket-mcp:latest
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/bitbucket-mcp:latest
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/bitbucket-mcp:${{ steps.vars.outputs.sha_short }}
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.sha_short }}
+          name: Release ${{ steps.vars.outputs.sha_short }}
+          body: |
+            Docker images published:
+            - ghcr.io/${{ steps.repo_owner.outputs.owner }}/bitbucket-mcp:latest
+            - ghcr.io/${{ steps.repo_owner.outputs.owner }}/bitbucket-mcp:${{ steps.vars.outputs.sha_short }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

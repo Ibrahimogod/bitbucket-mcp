@@ -24,12 +24,21 @@ This project provides a Model Context Protocol (MCP) server for Bitbucket integr
 ### 1. Use the Prebuilt Docker Image from GHCR
 
 ```powershell
-# Pull and run the latest image from GitHub Container Registry
+# Pull and run the image for a specific commit (recommended for reproducibility)
+# Replace <sha> with the 7-character commit hash from the GitHub Release or commit log
 # Replace <your_username> and <your_app_password> with your Bitbucket credentials
 
+docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:<sha>
+```
+
+- Or use `:latest` for the most recent build (not recommended for production):
+
+```powershell
 docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
 ```
+
 - The image is published at: [ghcr.io/ibrahimogod/bitbucket-mcp](https://github.com/users/Ibrahimogod/packages/container/bitbucket-mcp)
+- **Find the correct `<sha>` tag**: Go to the [GitHub Releases page](https://github.com/Ibrahimogod/bitbucket-mcp/releases) and use the 7-character tag for the release you want.
 
 ### 2. Build and Run Locally with Docker
 
