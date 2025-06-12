@@ -393,7 +393,6 @@ async fn test_decline_pullrequest_error() {
 }
 
 use bitbucket_mcp::common::bitbucket::BitbucketClient;
-use anyhow::Result;
 use mockito::mock;
 use serde_json::json;
 
