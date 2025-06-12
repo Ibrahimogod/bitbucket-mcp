@@ -15,6 +15,130 @@ pub struct BitbucketClient {
 }
 
 impl BitbucketClient {
+    // --- Pull Requests ---
+    /// Create a bitbucket pull request
+    pub async fn create_pullrequest(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests", workspace, repo_slug);
+        let req = self.client.post(&url).json(&body);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Get bitbucket pull request details
+    pub async fn get_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Update a bitbucket pull request
+    pub async fn update_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}", workspace, repo_slug, pr_id);
+        let req = self.client.put(&url).json(&body);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Approve a bitbucket pull request
+    pub async fn approve_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/approve", workspace, repo_slug, pr_id);
+        let req = self.client.post(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Unapprove a bitbucket pull request
+    pub async fn unapprove_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/approve", workspace, repo_slug, pr_id);
+        let req = self.client.delete(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Decline a bitbucket pull request
+    pub async fn decline_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/decline", workspace, repo_slug, pr_id);
+        let req = self.client.post(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Merge a bitbucket pull request
+    pub async fn merge_pullrequest(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: Option<serde_json::Value>) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/merge", workspace, repo_slug, pr_id);
+        let req = if let Some(b) = body {
+            self.client.post(&url).json(&b)
+        } else {
+            self.client.post(&url)
+        };
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// List bitbucket pull request comments
+    pub async fn list_pullrequest_comments(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/comments", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Add a bitbucket pull request comment
+    pub async fn add_pullrequest_comment(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/comments", workspace, repo_slug, pr_id);
+        let req = self.client.post(&url).json(&body);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// List bitbucket pull request activity
+    pub async fn list_pullrequest_activity(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/activity", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Get bitbucket pull request diff
+    pub async fn get_pullrequest_diff(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<String> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/diff", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.text().await?)
+    }
+
+    /// Get bitbucket pull request commits
+    pub async fn list_pullrequest_commits(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/commits", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// List bitbucket pull request tasks
+    pub async fn list_pullrequest_tasks(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/tasks", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Add a bitbucket pull request task
+    pub async fn add_pullrequest_task(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/tasks", workspace, repo_slug, pr_id);
+        let req = self.client.post(&url).json(&body);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
+
+    /// Get bitbucket pull request diffstat
+    pub async fn get_pullrequest_diffstat(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
+        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/diffstat", workspace, repo_slug, pr_id);
+        let req = self.client.get(&url);
+        let resp = self.apply_auth(req).send().await?;
+        Ok(resp.json().await?)
+    }
     pub fn from_env() -> Result<Self> {
         let api_username = env::var("BITBUCKET_API_USERNAME")
             .map_err(|_| anyhow!("BITBUCKET_API_USERNAME env var not set. Please set it to your Atlassian email."))?;
@@ -304,7 +428,276 @@ pub struct BitbucketTool;
 
 #[tool(tool_box)]
 impl BitbucketTool {
-    #[tool(description = "Get Bitbucket user info")] 
+    #[tool(description = "Create a bitbucket pull request")]
+    pub async fn create_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.create_pullrequest(&workspace, &repo_slug, body).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("create_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Get bitbucket pull request details")]
+    pub async fn get_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.get_pullrequest(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("get_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Update a bitbucket pull request")]
+    pub async fn update_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.update_pullrequest(&workspace, &repo_slug, &pr_id, body).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("update_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Approve a bitbucket pull request")]
+    pub async fn approve_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.approve_pullrequest(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("approve_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Unapprove a bitbucket pull request")]
+    pub async fn unapprove_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.unapprove_pullrequest(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("unapprove_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Decline a bitbucket pull request")]
+    pub async fn decline_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.decline_pullrequest(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("decline_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Merge a bitbucket pull request")]
+    pub async fn merge_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: Option<serde_json::Value>) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.merge_pullrequest(&workspace, &repo_slug, &pr_id, body).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("merge_pullrequest error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "List bitbucket pull request comments")]
+    pub async fn list_pullrequest_comments(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.list_pullrequest_comments(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("list_pullrequest_comments error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Add a bitbucket pull request comment")]
+    pub async fn add_pullrequest_comment(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.add_pullrequest_comment(&workspace, &repo_slug, &pr_id, body).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("add_pullrequest_comment error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "List bitbucket pull request activity")]
+    pub async fn list_pullrequest_activity(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.list_pullrequest_activity(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("list_pullrequest_activity error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Get bitbucket pull request diff")]
+    pub async fn get_pullrequest_diff(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.get_pullrequest_diff(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::text(val)])),
+            Err(e) => {
+                tracing::error!("get_pullrequest_diff error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Get bitbucket pull request commits")]
+    pub async fn list_pullrequest_commits(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.list_pullrequest_commits(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("list_pullrequest_commits error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "List bitbucket pull request tasks")]
+    pub async fn list_pullrequest_tasks(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.list_pullrequest_tasks(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("list_pullrequest_tasks error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Add a bitbucket pull request task")]
+    pub async fn add_pullrequest_task(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.add_pullrequest_task(&workspace, &repo_slug, &pr_id, body).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("add_pullrequest_task error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+
+    #[tool(description = "Get bitbucket pull request diffstat")]
+    pub async fn get_pullrequest_diffstat(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+        let client = match super::bitbucket::BitbucketClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                tracing::error!("BitbucketClient::from_env error: {e}");
+                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        };
+        match client.get_pullrequest_diffstat(&workspace, &repo_slug, &pr_id).await {
+            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Err(e) => {
+                tracing::error!("get_pullrequest_diffstat error: {e}");
+                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+            },
+        }
+    }
+    #[tool(description = "Get bitbucket user info")]
     pub async fn get_user(&self) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -322,7 +715,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List Bitbucket workspaces")]
+    #[tool(description = "List bitbucket workspaces")]
     pub async fn list_workspaces(&self) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -340,7 +733,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List repositories in a workspace")]
+    #[tool(description = "List bitbucket repositories in a workspace")]
     pub async fn list_repositories(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -358,7 +751,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List pull requests for a repository")]
+    #[tool(description = "List bitbucket pull requests for a repository")]
     pub async fn list_pullrequests(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         tracing::info!("list_pullrequests called with workspace='{}', repo_slug='{}'", workspace, repo_slug);
         let client = match super::bitbucket::BitbucketClient::from_env() {
@@ -381,7 +774,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List issues for a repository")]
+    #[tool(description = "List bitbucket issues for a repository")]
     pub async fn list_issues(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -399,7 +792,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Get workspace details")]
+    #[tool(description = "Get bitbucket workspace details")]
     pub async fn get_workspace(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -417,7 +810,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Get repository details")]
+    #[tool(description = "Get bitbucket repository details")]
     pub async fn get_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -435,7 +828,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List branches for a repository")]
+    #[tool(description = "List bitbucket branches for a repository")]
     pub async fn list_branches(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -453,7 +846,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List tags for a repository")]
+    #[tool(description = "List bitbucket tags for a repository")]
     pub async fn list_tags(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -471,7 +864,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List commits for a repository")]
+    #[tool(description = "List bitbucket commits for a repository")]
     pub async fn list_commits(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -489,7 +882,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List pipelines for a repository")]
+    #[tool(description = "List bitbucket pipelines for a repository")]
     pub async fn list_pipelines(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -507,7 +900,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List deployments for a repository")]
+    #[tool(description = "List bitbucket deployments for a repository")]
     pub async fn list_deployments(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -525,7 +918,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List downloads for a repository")]
+    #[tool(description = "List bitbucket downloads for a repository")]
     pub async fn list_downloads(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -543,7 +936,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List webhooks for a repository")]
+    #[tool(description = "List bitbucket webhooks for a repository")]
     pub async fn list_webhooks(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -561,7 +954,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List snippets for a workspace")]
+    #[tool(description = "List bitbucket snippets for a workspace")]
     pub async fn list_snippets(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -579,7 +972,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List projects for a workspace")]
+    #[tool(description = "List bitbucket projects for a workspace")]
     pub async fn list_projects(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -597,7 +990,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List branch restrictions for a repository")]
+    #[tool(description = "List bitbucket branch restrictions for a repository")]
     pub async fn list_branch_restrictions(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -615,7 +1008,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List commit statuses for a commit")]
+    #[tool(description = "List bitbucket commit statuses for a commit")]
     pub async fn list_commit_statuses(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -633,7 +1026,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "List users in a workspace")]
+    #[tool(description = "List bitbucket users in a workspace")]
     pub async fn list_users(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -651,7 +1044,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create a repository in a workspace")]
+    #[tool(description = "Create a bitbucket repository in a workspace")]
     pub async fn create_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -669,7 +1062,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Update a repository in a workspace")]
+    #[tool(description = "Update a bitbucket repository in a workspace")]
     pub async fn update_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -687,7 +1080,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Delete a repository in a workspace")]
+    #[tool(description = "Delete a bitbucket repository in a workspace")]
     pub async fn delete_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -705,7 +1098,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create a branch in a repository")]
+    #[tool(description = "Create a bitbucket branch in a repository")]
     pub async fn create_branch(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -723,7 +1116,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Delete a branch in a repository")]
+    #[tool(description = "Delete a bitbucket branch in a repository")]
     pub async fn delete_branch(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] branch: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -741,7 +1134,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Get branching model")]
+    #[tool(description = "Get bitbucket branching model")]
     pub async fn get_branching_model(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -759,7 +1152,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Update branching model")]
+    #[tool(description = "Update bitbucket branching model")]
     pub async fn update_branching_model(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -777,7 +1170,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create a commit status")]
+    #[tool(description = "Create a bitbucket commit status")]
     pub async fn create_commit_status(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -795,7 +1188,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Get commit details")]
+    #[tool(description = "Get bitbucket commit details")]
     pub async fn get_commit(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -813,7 +1206,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create a deployment")]
+    #[tool(description = "Create a bitbucket deployment")]
     pub async fn create_deployment(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -831,7 +1224,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create an issue")]
+    #[tool(description = "Create a bitbucket issue")]
     pub async fn create_issue(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -849,7 +1242,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Update an issue")]
+    #[tool(description = "Update a bitbucket issue")]
     pub async fn update_issue(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] issue_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -867,7 +1260,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Delete an issue")]
+    #[tool(description = "Delete a bitbucket issue")]
     pub async fn delete_issue(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] issue_id: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -885,7 +1278,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Trigger a pipeline")]
+    #[tool(description = "Trigger a bitbucket pipeline")]
     pub async fn trigger_pipeline(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -903,7 +1296,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create a project in a workspace")]
+    #[tool(description = "Create a bitbucket project in a workspace")]
     pub async fn create_project(&self, #[tool(param)] workspace: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -921,7 +1314,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Update a project in a workspace")]
+    #[tool(description = "Update a bitbucket project in a workspace")]
     pub async fn update_project(&self, #[tool(param)] workspace: String, #[tool(param)] project_key: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -939,7 +1332,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Delete a project in a workspace")]
+    #[tool(description = "Delete a bitbucket project in a workspace")]
     pub async fn delete_project(&self, #[tool(param)] workspace: String, #[tool(param)] project_key: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -957,7 +1350,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Create a snippet in a workspace")]
+    #[tool(description = "Create a bitbucket snippet in a workspace")]
     pub async fn create_snippet(&self, #[tool(param)] workspace: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -975,7 +1368,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Delete a snippet in a workspace")]
+    #[tool(description = "Delete a bitbucket snippet in a workspace")]
     pub async fn delete_snippet(&self, #[tool(param)] workspace: String, #[tool(param)] snippet_id: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
@@ -993,7 +1386,7 @@ impl BitbucketTool {
         }
     }
 
-    #[tool(description = "Get file source from a repository")]
+    #[tool(description = "Get bitbucket file source from a repository")]
     pub async fn get_file_source(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String, #[tool(param)] path: String) -> Result<CallToolResult, McpError> {
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
