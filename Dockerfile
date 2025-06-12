@@ -23,6 +23,4 @@ COPY --from=builder /code/target/release/bitbucket_stdio bitbucket_mcp
 
 USER 1001
 
-EXPOSE 8080
-
 CMD ["/app/bitbucket_mcp"]
