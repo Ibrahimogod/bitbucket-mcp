@@ -1,3 +1,40 @@
+use serde::{Serialize, Deserialize};
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BitbucketCommentContent {
+    pub raw: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BitbucketCommentPayload {
+    pub content: BitbucketCommentContent,
+}
+
+pub fn normalize_comment_input(body: serde_json::Value) -> Result<BitbucketCommentPayload, String> {
+    if let Some(content) = body.get("content") {
+        if let Some(raw) = content.get("raw") {
+            return Ok(BitbucketCommentPayload {
+                content: BitbucketCommentContent {
+                    raw: raw.as_str().unwrap_or("").to_string(),
+                },
+            });
+        }
+    }
+    if let Some(raw) = body.get("body") {
+        return Ok(BitbucketCommentPayload {
+            content: BitbucketCommentContent {
+                raw: raw.as_str().unwrap_or("").to_string(),
+            },
+        });
+    }
+    if let Some(s) = body.as_str() {
+        return Ok(BitbucketCommentPayload {
+            content: BitbucketCommentContent {
+                raw: s.to_string(),
+            },
+        });
+    }
+    Err("Invalid comment input format".to_string())
+}
 // Bitbucket MCP Tool Implementation
 // This module provides MCP tools for Bitbucket Cloud REST API integration.
 // Credentials are fetched from environment variables: BITBUCKET_USERNAME, BITBUCKET_APP_PASSWORD
@@ -121,7 +158,7 @@ impl BitbucketClient {
     }
 
     /// Add a bitbucket pull request comment
-    pub async fn add_pullrequest_comment(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
+    pub async fn add_pullrequest_comment(&self, workspace: &str, repo_slug: &str, pr_id: &str, body: BitbucketCommentPayload) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}/{}/pullrequests/{}/comments", self.base_url, workspace, repo_slug, pr_id);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
@@ -710,6 +747,10 @@ impl BitbucketTool {
 
     #[tool(description = "Add a bitbucket pull request comment")]
     pub async fn add_pullrequest_comment(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+        let payload = match normalize_comment_input(body) {
+            Ok(p) => p,
+            Err(e) => return Ok(CallToolResult::error(vec![Content::text(e)])),
+        };
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
@@ -717,7 +758,7 @@ impl BitbucketTool {
                 return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
             },
         };
-        match client.add_pullrequest_comment(&workspace, &repo_slug, &pr_id, body).await {
+        match client.add_pullrequest_comment(&workspace, &repo_slug, &pr_id, payload).await {
             Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
             Err(e) => {
                 tracing::error!("add_pullrequest_comment error: {e}");

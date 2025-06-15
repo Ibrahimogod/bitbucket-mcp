@@ -267,7 +267,8 @@ async fn test_add_pullrequest_comment_success() {
         .create();
     let client = make_client(&mockito::server_url());
     let body = serde_json::json!({"content": {"raw": "Nice!"}});
-    let result = client.add_pullrequest_comment("ws", "repo", "1", body).await.unwrap();
+    let payload = bitbucket_mcp::common::bitbucket::normalize_comment_input(body).unwrap();
+    let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await.unwrap();
     assert_eq!(result["id"], 123);
 }
 
@@ -279,7 +280,8 @@ async fn test_add_pullrequest_comment_error() {
         .create();
     let client = make_client(&mockito::server_url());
     let body = serde_json::json!({"content": {"raw": "Nice!"}});
-    let result = client.add_pullrequest_comment("ws", "repo", "1", body).await;
+    let payload = bitbucket_mcp::common::bitbucket::normalize_comment_input(body).unwrap();
+    let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await;
     assert!(result.is_err());
 }
 
