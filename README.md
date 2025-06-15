@@ -68,3 +68,72 @@ MIT
 ---
 
 **Bitbucket MCP** is the best way to automate Bitbucket Cloud with Rust, bots, or CI/CD. Star the repo and try it today!
+
+
+---
+
+## Example: VS Code MCP Settings for Docker Integration
+
+You can configure the VS Code MCP extension to launch the Bitbucket MCP server automatically using Docker. Add the following to your `.vscode/settings.json` (or your global MCP settings file):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "bitbucket-mcp-docker": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "-e", "BITBUCKET_API_USERNAME",
+          "-e", "BITBUCKET_APP_PASSWORD",
+          "-e", "RUST_BACKTRACE",
+          "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
+        ],
+        "env": {
+          "BITBUCKET_API_USERNAME": "<your_username>",
+          "BITBUCKET_APP_PASSWORD": "<your_app_password>",
+          "RUST_BACKTRACE": "1"
+        }
+      }
+    }
+  }
+}
+```
+
+Replace `<your_username>` and `<your_app_password>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+
+This configuration allows the MCP extension to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools in VS Code.
+
+---
+
+## Example: Cursor MCP Settings for Docker Integration
+
+You can configure Cursor to launch the Bitbucket MCP server automatically using Docker. Add the following to your `.cursor/mcp.json` (for project) or `~/.cursor/mcp.json` (for global use):
+
+```json
+{
+  "mcpServers": {
+    "bitbucket-mcp-docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "-e", "BITBUCKET_API_USERNAME",
+        "-e", "BITBUCKET_APP_PASSWORD",
+        "-e", "RUST_BACKTRACE",
+        "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
+      ],
+      "env": {
+        "BITBUCKET_API_USERNAME": "<your_username>",
+        "BITBUCKET_APP_PASSWORD": "<your_app_password>",
+        "RUST_BACKTRACE": "1"
+      }
+    }
+  }
+}
+```
+
+Replace `<your_username>` and `<your_app_password>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+
+This configuration allows Cursor to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools.
