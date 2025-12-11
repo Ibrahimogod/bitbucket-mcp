@@ -171,36 +171,8 @@ impl BitbucketClient {
 
     /// List bitbucket pull request comments with pagination support
     pub async fn list_pullrequest_comments(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/pullrequests/{}/comments", self.base_url, workspace, repo_slug, pr_id);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            // Collect values from this page
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            // Check if there's a next page
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                // No more pages, return combined results
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/comments", self.base_url, workspace, repo_slug, pr_id);
+        self.fetch_paginated(url).await
     }
 
     /// Add a bitbucket pull request comment
@@ -218,33 +190,8 @@ impl BitbucketClient {
 
     /// List bitbucket pull request activity
     pub async fn list_pullrequest_activity(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/pullrequests/{}/activity", self.base_url, workspace, repo_slug, pr_id);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/activity", self.base_url, workspace, repo_slug, pr_id);
+        self.fetch_paginated(url).await
     }
 
     /// Get bitbucket pull request diff
@@ -262,64 +209,14 @@ impl BitbucketClient {
 
     /// Get bitbucket pull request commits with pagination
     pub async fn list_pullrequest_commits(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/pullrequests/{}/commits", self.base_url, workspace, repo_slug, pr_id);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/commits", self.base_url, workspace, repo_slug, pr_id);
+        self.fetch_paginated(url).await
     }
 
     /// List bitbucket pull request tasks with pagination
     pub async fn list_pullrequest_tasks(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/pullrequests/{}/tasks", self.base_url, workspace, repo_slug, pr_id);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/tasks", self.base_url, workspace, repo_slug, pr_id);
+        self.fetch_paginated(url).await
     }
 
     /// Add a bitbucket pull request task
@@ -364,6 +261,41 @@ impl BitbucketClient {
         req.basic_auth(&self.api_username, Some(&self.app_password))
     }
 
+    /// Helper method to handle paginated API responses
+    /// Fetches all pages and aggregates results into a single response
+    async fn fetch_paginated(&self, initial_url: String) -> Result<serde_json::Value> {
+        let mut all_values = Vec::new();
+        let mut url = initial_url;
+        
+        loop {
+            let req = self.client.get(&url);
+            let resp = self.apply_auth(req).send().await?;
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+            }
+            
+            let page: serde_json::Value = resp.json().await?;
+            
+            // Collect values from this page
+            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
+                all_values.extend_from_slice(values);
+            }
+            
+            // Check if there's a next page
+            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
+                url = next_url.to_string();
+            } else {
+                // No more pages, return combined results
+                return Ok(serde_json::json!({
+                    "values": all_values,
+                    "size": all_values.len()
+                }));
+            }
+        }
+    }
+
     pub async fn get_user(&self) -> Result<serde_json::Value> {
         let url = format!("{}/user", self.base_url);
         let req = self.client.get(&url);
@@ -377,123 +309,23 @@ impl BitbucketClient {
     }
 
     pub async fn list_workspaces(&self) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/workspaces", self.base_url);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/workspaces", self.base_url);
+        self.fetch_paginated(url).await
     }
 
     pub async fn list_repositories(&self, workspace: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}", self.base_url, workspace);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
 
     pub async fn list_pullrequests(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/pullrequests", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/pullrequests", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
 
     pub async fn list_issues(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/issues", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/issues", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
 
     pub async fn get_workspace(&self, workspace: &str) -> Result<serde_json::Value> {
@@ -519,352 +351,52 @@ impl BitbucketClient {
         Ok(resp.json().await?)
     }
     pub async fn list_branches(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/refs/branches", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/refs/branches", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_tags(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/refs/tags", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/refs/tags", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_commits(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/commits", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/commits", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_pipelines(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/pipelines/", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/pipelines/", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_deployments(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/deployments/", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/deployments/", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_downloads(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/downloads", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/downloads", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_webhooks(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/hooks", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/hooks", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_snippets(&self, workspace: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/snippets/{}", self.base_url, workspace);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/snippets/{}", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
     pub async fn list_projects(&self, workspace: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/workspaces/{}/projects", self.base_url, workspace);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/workspaces/{}/projects", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
     pub async fn list_branch_restrictions(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/branch-restrictions", self.base_url, workspace, repo_slug);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/branch-restrictions", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_commit_statuses(&self, workspace: &str, repo_slug: &str, commit: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/repositories/{}/{}/commit/{}/statuses", self.base_url, workspace, repo_slug, commit);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/repositories/{}/{}/commit/{}/statuses", self.base_url, workspace, repo_slug, commit);
+        self.fetch_paginated(url).await
     }
     pub async fn list_users(&self, workspace: &str) -> Result<serde_json::Value> {
-        let mut all_values = Vec::new();
-        let mut url = format!("{}/workspaces/{}/members", self.base_url, workspace);
-        
-        loop {
-            let req = self.client.get(&url);
-            let resp = self.apply_auth(req).send().await?;
-            if !resp.status().is_success() {
-                let status = resp.status();
-                let text = resp.text().await.unwrap_or_default();
-                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-            }
-            
-            let page: serde_json::Value = resp.json().await?;
-            
-            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
-                all_values.extend(values.clone());
-            }
-            
-            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
-                url = next_url.to_string();
-            } else {
-                return Ok(serde_json::json!({
-                    "values": all_values,
-                    "size": all_values.len()
-                }));
-            }
-        }
+        let url = format!("{}/workspaces/{}/members", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
 
     /// Create a repository in a workspace

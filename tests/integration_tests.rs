@@ -18,6 +18,11 @@ fn get_integration_client() -> Option<BitbucketClient> {
     })
 }
 
+fn get_test_workspace() -> Option<String> {
+    // Get workspace from environment variable, or skip test if not set
+    env::var("BITBUCKET_TEST_WORKSPACE").ok()
+}
+
 #[tokio::test]
 #[ignore] // Run with: cargo test --ignored
 async fn integration_test_get_user() {
@@ -64,12 +69,17 @@ async fn integration_test_get_workspace() {
         None => return,
     };
     
-    let result = client.get_workspace("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let result = client.get_workspace(&workspace).await;
     assert!(result.is_ok(), "Failed to get workspace: {:?}", result.err());
     
-    let workspace = result.unwrap();
-    println!("Workspace: {}", serde_json::to_string_pretty(&workspace).unwrap());
-    assert_eq!(workspace["slug"], "YOUR_WORKSPACE");
+    let workspace_data = result.unwrap();
+    println!("Workspace: {}", serde_json::to_string_pretty(&workspace_data).unwrap());
+    assert_eq!(workspace_data["slug"], workspace);
 }
 
 #[tokio::test]
@@ -80,7 +90,12 @@ async fn integration_test_list_repositories() {
         None => return,
     };
     
-    let result = client.list_repositories("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let result = client.list_repositories(&workspace).await;
     assert!(result.is_ok(), "Failed to list repositories: {:?}", result.err());
     
     let repos = result.unwrap();
@@ -102,15 +117,20 @@ async fn integration_test_get_repository() {
         None => return,
     };
     
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
     // First, list repositories to get an actual repo
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(values) = repos["values"].as_array() {
             if !values.is_empty() {
                 let first_repo_slug = values[0]["slug"].as_str().unwrap();
                 println!("Testing with repository: {}", first_repo_slug);
                 
-                let result = client.get_repository("YOUR_WORKSPACE", first_repo_slug).await;
+                let result = client.get_repository(&workspace, first_repo_slug).await;
                 assert!(result.is_ok(), "Failed to get repository: {:?}", result.err());
                 
                 let repo = result.unwrap();
@@ -131,15 +151,20 @@ async fn integration_test_list_pullrequests() {
         None => return,
     };
     
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
     // First, get a repository
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(values) = repos["values"].as_array() {
             if !values.is_empty() {
                 let first_repo_slug = values[0]["slug"].as_str().unwrap();
                 println!("Listing PRs for repository: {}", first_repo_slug);
                 
-                let result = client.list_pullrequests("YOUR_WORKSPACE", first_repo_slug).await;
+                let result = client.list_pullrequests(&workspace, first_repo_slug).await;
                 assert!(result.is_ok(), "Failed to list pull requests: {:?}", result.err());
                 
                 let prs = result.unwrap();
@@ -160,14 +185,19 @@ async fn integration_test_list_pullrequest_comments() {
         None => return,
     };
     
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
     // First, get a repository and a PR
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(repo_values) = repos["values"].as_array() {
             if !repo_values.is_empty() {
                 let first_repo_slug = repo_values[0]["slug"].as_str().unwrap();
                 
-                let prs_result = client.list_pullrequests("YOUR_WORKSPACE", first_repo_slug).await;
+                let prs_result = client.list_pullrequests(&workspace, first_repo_slug).await;
                 if let Ok(prs) = prs_result {
                     if let Some(pr_values) = prs["values"].as_array() {
                         if !pr_values.is_empty() {
@@ -175,7 +205,7 @@ async fn integration_test_list_pullrequest_comments() {
                             println!("Listing comments for PR: {}", first_pr_id);
                             
                             let result = client.list_pullrequest_comments(
-                                "YOUR_WORKSPACE",
+                                &workspace,
                                 first_repo_slug,
                                 &first_pr_id.to_string()
                             ).await;
@@ -208,14 +238,19 @@ async fn integration_test_list_branches() {
         None => return,
     };
     
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(values) = repos["values"].as_array() {
             if !values.is_empty() {
                 let first_repo_slug = values[0]["slug"].as_str().unwrap();
                 println!("Listing branches for repository: {}", first_repo_slug);
                 
-                let result = client.list_branches("YOUR_WORKSPACE", first_repo_slug).await;
+                let result = client.list_branches(&workspace, first_repo_slug).await;
                 assert!(result.is_ok(), "Failed to list branches: {:?}", result.err());
                 
                 let branches = result.unwrap();
@@ -236,14 +271,19 @@ async fn integration_test_list_tags() {
         None => return,
     };
     
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(values) = repos["values"].as_array() {
             if !values.is_empty() {
                 let first_repo_slug = values[0]["slug"].as_str().unwrap();
                 println!("Listing tags for repository: {}", first_repo_slug);
                 
-                let result = client.list_tags("YOUR_WORKSPACE", first_repo_slug).await;
+                let result = client.list_tags(&workspace, first_repo_slug).await;
                 assert!(result.is_ok(), "Failed to list tags: {:?}", result.err());
                 
                 let tags = result.unwrap();
@@ -264,14 +304,19 @@ async fn integration_test_list_commits() {
         None => return,
     };
     
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(values) = repos["values"].as_array() {
             if !values.is_empty() {
                 let first_repo_slug = values[0]["slug"].as_str().unwrap();
                 println!("Listing commits for repository: {}", first_repo_slug);
                 
-                let result = client.list_commits("YOUR_WORKSPACE", first_repo_slug).await;
+                let result = client.list_commits(&workspace, first_repo_slug).await;
                 assert!(result.is_ok(), "Failed to list commits: {:?}", result.err());
                 
                 let commits = result.unwrap();
@@ -297,14 +342,19 @@ async fn integration_test_list_issues() {
         None => return,
     };
     
-    let repos_result = client.list_repositories("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let repos_result = client.list_repositories(&workspace).await;
     if let Ok(repos) = repos_result {
         if let Some(values) = repos["values"].as_array() {
             if !values.is_empty() {
                 let first_repo_slug = values[0]["slug"].as_str().unwrap();
                 println!("Listing issues for repository: {}", first_repo_slug);
                 
-                let result = client.list_issues("YOUR_WORKSPACE", first_repo_slug).await;
+                let result = client.list_issues(&workspace, first_repo_slug).await;
                 assert!(result.is_ok(), "Failed to list issues: {:?}", result.err());
                 
                 let issues = result.unwrap();
@@ -325,6 +375,11 @@ async fn integration_test_pagination_verification() {
         None => return,
     };
     
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
     println!("\n=== Testing Pagination Implementation ===\n");
     
     // Test that list methods return consistent format
@@ -333,7 +388,7 @@ async fn integration_test_pagination_verification() {
     assert!(workspaces.get("size").is_some(), "Workspaces should have size field");
     println!("✓ Workspaces pagination format correct");
     
-    let repos = client.list_repositories("YOUR_WORKSPACE").await.unwrap();
+    let repos = client.list_repositories(&workspace).await.unwrap();
     assert!(repos.get("values").is_some(), "Repositories should have values array");
     assert!(repos.get("size").is_some(), "Repositories should have size field");
     println!("✓ Repositories pagination format correct");
@@ -342,12 +397,12 @@ async fn integration_test_pagination_verification() {
         if !repo_values.is_empty() {
             let first_repo_slug = repo_values[0]["slug"].as_str().unwrap();
             
-            let prs = client.list_pullrequests("YOUR_WORKSPACE", first_repo_slug).await.unwrap();
+            let prs = client.list_pullrequests(&workspace, first_repo_slug).await.unwrap();
             assert!(prs.get("values").is_some(), "PRs should have values array");
             assert!(prs.get("size").is_some(), "PRs should have size field");
             println!("✓ Pull Requests pagination format correct");
             
-            let branches = client.list_branches("YOUR_WORKSPACE", first_repo_slug).await.unwrap();
+            let branches = client.list_branches(&workspace, first_repo_slug).await.unwrap();
             assert!(branches.get("values").is_some(), "Branches should have values array");
             assert!(branches.get("size").is_some(), "Branches should have size field");
             println!("✓ Branches pagination format correct");
@@ -365,7 +420,12 @@ async fn integration_test_list_users() {
         None => return,
     };
     
-    let result = client.list_users("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let result = client.list_users(&workspace).await;
     assert!(result.is_ok(), "Failed to list users: {:?}", result.err());
     
     let users = result.unwrap();
@@ -383,7 +443,12 @@ async fn integration_test_list_projects() {
         None => return,
     };
     
-    let result = client.list_projects("YOUR_WORKSPACE").await;
+    let workspace = match get_test_workspace() {
+        Some(w) => w,
+        None => return,
+    };
+    
+    let result = client.list_projects(&workspace).await;
     assert!(result.is_ok(), "Failed to list projects: {:?}", result.err());
     
     let projects = result.unwrap();

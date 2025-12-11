@@ -1,20 +1,9 @@
-use bitbucket_mcp::common::bitbucket::{BitbucketClient, normalize_comment_input, BitbucketCommentPayload};
+mod common;
+
+use bitbucket_mcp::common::bitbucket::{BitbucketCommentPayload, normalize_comment_input};
 use mockito;
 use serde_json::json;
-
-fn make_client(base_url: &str) -> BitbucketClient {
-    let base_url = if base_url.ends_with("/2.0") {
-        base_url.to_string()
-    } else {
-        format!("{}/2.0", base_url.trim_end_matches('/'))
-    };
-    BitbucketClient {
-        api_username: "user".to_string(),
-        app_password: "pass".to_string(),
-        client: reqwest::Client::new(),
-        base_url,
-    }
-}
+use common::make_client;
 
 #[test]
 fn test_normalize_comment_simple_string() {

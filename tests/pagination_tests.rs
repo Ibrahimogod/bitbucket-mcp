@@ -1,20 +1,8 @@
-use bitbucket_mcp::common::bitbucket::BitbucketClient;
+mod common;
+
 use mockito;
 use serde_json::json;
-
-fn make_client(base_url: &str) -> BitbucketClient {
-    let base_url = if base_url.ends_with("/2.0") {
-        base_url.to_string()
-    } else {
-        format!("{}/2.0", base_url.trim_end_matches('/'))
-    };
-    BitbucketClient {
-        api_username: "user".to_string(),
-        app_password: "pass".to_string(),
-        client: reqwest::Client::new(),
-        base_url,
-    }
-}
+use common::make_client;
 
 #[tokio::test]
 async fn test_pagination_single_page() {
