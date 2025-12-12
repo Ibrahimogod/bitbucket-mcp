@@ -295,7 +295,7 @@ impl BitbucketClient {
         })
     }
 
-    fn apply_auth<'a>(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         req.basic_auth(&self.api_username, Some(&self.app_password))
     }
 

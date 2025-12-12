@@ -1,6 +1,5 @@
 mod common;
 
-use mockito;
 use serde_json::json;
 use common::make_client;
 

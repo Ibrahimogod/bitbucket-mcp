@@ -1,7 +1,6 @@
 mod common;
 
 use bitbucket_mcp::common::bitbucket::{BitbucketCommentPayload, normalize_comment_input};
-use mockito;
 use serde_json::json;
 use common::make_client;
 
