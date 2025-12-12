@@ -4,6 +4,14 @@ pub struct BitbucketCommentContent {
     pub raw: String,
 }
 
+/// Represents inline comment positioning in Bitbucket pull requests.
+/// 
+/// Used to attach comments to specific lines or line ranges in code files.
+/// 
+/// # Fields
+/// * `from` - Starting line number (1-based). None for new file comments.
+/// * `to` - Ending line number (1-based). None for single-line comments.
+/// * `path` - Relative path to the file in the repository.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BitbucketInline {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -20,6 +28,27 @@ pub struct BitbucketCommentPayload {
     pub inline: Option<BitbucketInline>,
 }
 
+/// Normalizes various Bitbucket comment input formats into a `BitbucketCommentPayload`.
+///
+/// # Supported Input Formats
+/// - **Object with `content.raw` field**: `{ "content": { "raw": "comment text" }, ... }`
+/// - **Object with `body` field**: `{ "body": "comment text", ... }`
+/// - **Direct string**: `"comment text"`
+///
+/// The function checks for these formats in the following precedence order:
+/// 1. `content.raw` (highest priority)
+/// 2. `body`
+/// 3. Direct string value
+///
+/// # Inline Comment Parameters
+/// If the input contains an `inline` object with a `path` field, optional `from` and `to` fields
+/// are also extracted. Example:
+/// ```json
+/// { "content": { "raw": "comment" }, "inline": { "path": "file.rs", "from": 10, "to": 12 } }
+/// ```
+///
+/// # Errors
+/// Returns an error if no valid comment string is found in any supported format.
 pub fn normalize_comment_input(body: serde_json::Value) -> Result<BitbucketCommentPayload, String> {
     let mut comment_raw: Option<String> = None;
     let mut inline_data: Option<BitbucketInline> = None;
@@ -38,9 +67,18 @@ pub fn normalize_comment_input(body: serde_json::Value) -> Result<BitbucketComme
     // Extract inline data if present
     if let Some(inline) = body.get("inline") {
         if let Some(path) = inline.get("path").and_then(|v| v.as_str()) {
+            // Safely convert i64 to i32 with range validation
+            let from = match inline.get("from").and_then(|v| v.as_i64()) {
+                Some(v) => Some(i32::try_from(v).map_err(|_| format!("'from' line number {} out of valid range", v))?),
+                None => None,
+            };
+            let to = match inline.get("to").and_then(|v| v.as_i64()) {
+                Some(v) => Some(i32::try_from(v).map_err(|_| format!("'to' line number {} out of valid range", v))?),
+                None => None,
+            };
             inline_data = Some(BitbucketInline {
-                from: inline.get("from").and_then(|v| v.as_i64()).map(|v| v as i32),
-                to: inline.get("to").and_then(|v| v.as_i64()).map(|v| v as i32),
+                from,
+                to,
                 path: path.to_string(),
             });
         }
@@ -263,11 +301,22 @@ impl BitbucketClient {
 
     /// Helper method to handle paginated API responses
     /// Fetches all pages and aggregates results into a single response
+    /// 
+    /// # Safety
+    /// Includes a maximum page limit of 1000 to prevent infinite loops
+    /// in case of malformed API responses or circular pagination links.
     async fn fetch_paginated(&self, initial_url: String) -> Result<serde_json::Value> {
+        const MAX_PAGES: usize = 1000;
         let mut all_values = Vec::new();
         let mut url = initial_url;
+        let mut page_count = 0;
         
         loop {
+            page_count += 1;
+            if page_count > MAX_PAGES {
+                return Err(anyhow!("Exceeded maximum page limit ({}) - possible circular pagination", MAX_PAGES));
+            }
+            
             let req = self.client.get(&url);
             let resp = self.apply_auth(req).send().await?;
             if !resp.status().is_success() {

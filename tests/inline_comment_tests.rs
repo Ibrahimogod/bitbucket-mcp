@@ -307,7 +307,8 @@ fn test_inline_comment_payload_serialization_null_from() {
     
     assert_eq!(json["content"]["raw"], "Added lines");
     assert_eq!(json["inline"]["path"], "src/new.rs");
-    assert!(json["inline"]["from"].is_null());
+    // Field is omitted when None due to skip_serializing_if
+    assert!(json["inline"].get("from").is_none());
     assert_eq!(json["inline"]["to"], 20);
 }
 
@@ -329,5 +330,6 @@ fn test_inline_comment_payload_serialization_null_to() {
     assert_eq!(json["content"]["raw"], "Single line");
     assert_eq!(json["inline"]["path"], "src/file.rs");
     assert_eq!(json["inline"]["from"], 42);
-    assert!(json["inline"]["to"].is_null());
+    // Field is omitted when None due to skip_serializing_if
+    assert!(json["inline"].get("to").is_none());
 }

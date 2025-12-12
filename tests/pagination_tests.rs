@@ -109,6 +109,7 @@ async fn test_pagination_list_repositories() {
     let result = client.list_repositories("ws").await.unwrap();
     
     assert_eq!(result["values"].as_array().unwrap().len(), 3);
+    assert_eq!(result["size"], 3);
 }
 
 #[tokio::test]
@@ -132,6 +133,7 @@ async fn test_pagination_list_workspaces() {
     let result = client.list_workspaces().await.unwrap();
     
     assert_eq!(result["values"].as_array().unwrap().len(), 2);
+    assert_eq!(result["size"], 2);
 }
 
 #[tokio::test]
@@ -155,6 +157,7 @@ async fn test_pagination_list_issues() {
     let result = client.list_issues("ws", "repo").await.unwrap();
     
     assert_eq!(result["values"].as_array().unwrap().len(), 3);
+    assert_eq!(result["size"], 3);
 }
 
 #[tokio::test]
@@ -234,6 +237,7 @@ async fn test_pagination_list_activity() {
     let result = client.list_pullrequest_activity("ws", "repo", "1").await.unwrap();
     
     assert_eq!(result["values"].as_array().unwrap().len(), 2);
+    assert_eq!(result["size"], 2);
 }
 
 #[tokio::test]
