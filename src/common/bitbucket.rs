@@ -4,35 +4,93 @@ pub struct BitbucketCommentContent {
     pub raw: String,
 }
 
+/// Represents inline comment positioning in Bitbucket pull requests.
+/// 
+/// Used to attach comments to specific lines or line ranges in code files.
+/// 
+/// # Fields
+/// * `from` - Starting line number (1-based). None for new file comments.
+/// * `to` - Ending line number (1-based). None for single-line comments.
+/// * `path` - Relative path to the file in the repository.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BitbucketInline {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to: Option<i32>,
+    pub path: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BitbucketCommentPayload {
     pub content: BitbucketCommentContent,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inline: Option<BitbucketInline>,
 }
 
+/// Normalizes various Bitbucket comment input formats into a `BitbucketCommentPayload`.
+///
+/// # Supported Input Formats
+/// - **Object with `content.raw` field**: `{ "content": { "raw": "comment text" }, ... }`
+/// - **Object with `body` field**: `{ "body": "comment text", ... }`
+/// - **Direct string**: `"comment text"`
+///
+/// The function checks for these formats in the following precedence order:
+/// 1. `content.raw` (highest priority)
+/// 2. `body`
+/// 3. Direct string value
+///
+/// # Inline Comment Parameters
+/// If the input contains an `inline` object with a `path` field, optional `from` and `to` fields
+/// are also extracted. Example:
+/// ```json
+/// { "content": { "raw": "comment" }, "inline": { "path": "file.rs", "from": 10, "to": 12 } }
+/// ```
+///
+/// # Errors
+/// Returns an error if no valid comment string is found in any supported format.
 pub fn normalize_comment_input(body: serde_json::Value) -> Result<BitbucketCommentPayload, String> {
+    let mut comment_raw: Option<String> = None;
+    let mut inline_data: Option<BitbucketInline> = None;
+    
+    // Extract comment content
     if let Some(content) = body.get("content") {
         if let Some(raw) = content.get("raw") {
-            return Ok(BitbucketCommentPayload {
-                content: BitbucketCommentContent {
-                    raw: raw.as_str().unwrap_or("").to_string(),
-                },
+            comment_raw = Some(raw.as_str().unwrap_or("").to_string());
+        }
+    } else if let Some(raw) = body.get("body") {
+        comment_raw = Some(raw.as_str().unwrap_or("").to_string());
+    } else if let Some(s) = body.as_str() {
+        comment_raw = Some(s.to_string());
+    }
+    
+    // Extract inline data if present
+    if let Some(inline) = body.get("inline") {
+        if let Some(path) = inline.get("path").and_then(|v| v.as_str()) {
+            // Safely convert i64 to i32 with range validation
+            let from = match inline.get("from").and_then(|v| v.as_i64()) {
+                Some(v) => Some(i32::try_from(v).map_err(|_| format!("'from' line number {} out of valid range", v))?),
+                None => None,
+            };
+            let to = match inline.get("to").and_then(|v| v.as_i64()) {
+                Some(v) => Some(i32::try_from(v).map_err(|_| format!("'to' line number {} out of valid range", v))?),
+                None => None,
+            };
+            inline_data = Some(BitbucketInline {
+                from,
+                to,
+                path: path.to_string(),
             });
         }
     }
-    if let Some(raw) = body.get("body") {
+    
+    if let Some(raw) = comment_raw {
         return Ok(BitbucketCommentPayload {
-            content: BitbucketCommentContent {
-                raw: raw.as_str().unwrap_or("").to_string(),
-            },
+            content: BitbucketCommentContent { raw },
+            inline: inline_data,
         });
     }
-    if let Some(s) = body.as_str() {
-        return Ok(BitbucketCommentPayload {
-            content: BitbucketCommentContent {
-                raw: s.to_string(),
-            },
-        });
-    }
+    
     Err("Invalid comment input format".to_string())
 }
 // Bitbucket MCP Tool Implementation
@@ -59,6 +117,11 @@ impl BitbucketClient {
         let url = format!("{}/repositories/{}/{}/pullrequests", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
@@ -144,17 +207,10 @@ impl BitbucketClient {
         Ok(resp.json().await?)
     }
 
-    /// List bitbucket pull request comments
+    /// List bitbucket pull request comments with pagination support
     pub async fn list_pullrequest_comments(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}/{}/pullrequests/{}/comments", self.base_url, workspace, repo_slug, pr_id);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     /// Add a bitbucket pull request comment
@@ -173,14 +229,7 @@ impl BitbucketClient {
     /// List bitbucket pull request activity
     pub async fn list_pullrequest_activity(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}/{}/pullrequests/{}/activity", self.base_url, workspace, repo_slug, pr_id);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     /// Get bitbucket pull request diff
@@ -196,25 +245,16 @@ impl BitbucketClient {
         Ok(resp.text().await?)
     }
 
-    /// Get bitbucket pull request commits
+    /// Get bitbucket pull request commits with pagination
     pub async fn list_pullrequest_commits(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pullrequests/{}/commits", workspace, repo_slug, pr_id);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/pullrequests/{}/commits", self.base_url, workspace, repo_slug, pr_id);
+        self.fetch_paginated(url).await
     }
 
-    /// List bitbucket pull request tasks
+    /// List bitbucket pull request tasks with pagination
     pub async fn list_pullrequest_tasks(&self, workspace: &str, repo_slug: &str, pr_id: &str) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}/{}/pullrequests/{}/tasks", self.base_url, workspace, repo_slug, pr_id);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     /// Add a bitbucket pull request task
@@ -255,8 +295,54 @@ impl BitbucketClient {
         })
     }
 
-    fn apply_auth<'a>(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         req.basic_auth(&self.api_username, Some(&self.app_password))
+    }
+
+    /// Helper method to handle paginated API responses
+    /// Fetches all pages and aggregates results into a single response
+    /// 
+    /// # Safety
+    /// Includes a maximum page limit of 1000 to prevent infinite loops
+    /// in case of malformed API responses or circular pagination links.
+    async fn fetch_paginated(&self, initial_url: String) -> Result<serde_json::Value> {
+        const MAX_PAGES: usize = 1000;
+        let mut all_values = Vec::new();
+        let mut url = initial_url;
+        let mut page_count = 0;
+        
+        loop {
+            page_count += 1;
+            if page_count > MAX_PAGES {
+                return Err(anyhow!("Exceeded maximum page limit ({}) - possible circular pagination", MAX_PAGES));
+            }
+            
+            let req = self.client.get(&url);
+            let resp = self.apply_auth(req).send().await?;
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+            }
+            
+            let page: serde_json::Value = resp.json().await?;
+            
+            // Collect values from this page
+            if let Some(values) = page.get("values").and_then(|v| v.as_array()) {
+                all_values.extend_from_slice(values);
+            }
+            
+            // Check if there's a next page
+            if let Some(next_url) = page.get("next").and_then(|v| v.as_str()) {
+                url = next_url.to_string();
+            } else {
+                // No more pages, return combined results
+                return Ok(serde_json::json!({
+                    "values": all_values,
+                    "size": all_values.len()
+                }));
+            }
+        }
     }
 
     pub async fn get_user(&self) -> Result<serde_json::Value> {
@@ -273,50 +359,22 @@ impl BitbucketClient {
 
     pub async fn list_workspaces(&self) -> Result<serde_json::Value> {
         let url = format!("{}/workspaces", self.base_url);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     pub async fn list_repositories(&self, workspace: &str) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}", self.base_url, workspace);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     pub async fn list_pullrequests(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}/{}/pullrequests", self.base_url, workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     pub async fn list_issues(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
         let url = format!("{}/repositories/{}/{}/issues", self.base_url, workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        if !resp.status().is_success() {
-            let status = resp.status();
-            let text = resp.text().await.unwrap_or_default();
-            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
-        }
-        Ok(resp.json().await?)
+        self.fetch_paginated(url).await
     }
 
     pub async fn get_workspace(&self, workspace: &str) -> Result<serde_json::Value> {
@@ -342,91 +400,77 @@ impl BitbucketClient {
         Ok(resp.json().await?)
     }
     pub async fn list_branches(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/refs/branches", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/refs/branches", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_tags(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/refs/tags", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/refs/tags", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_commits(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/commits", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/commits", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_pipelines(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pipelines/", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/pipelines/", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_deployments(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/deployments/", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/deployments/", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_downloads(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/downloads", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/downloads", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_webhooks(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/hooks", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/hooks", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_snippets(&self, workspace: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/snippets/{}", workspace);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/snippets/{}", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
     pub async fn list_projects(&self, workspace: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/workspaces/{}/projects", workspace);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/workspaces/{}/projects", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
     pub async fn list_branch_restrictions(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/branch-restrictions", workspace, repo_slug);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/branch-restrictions", self.base_url, workspace, repo_slug);
+        self.fetch_paginated(url).await
     }
     pub async fn list_commit_statuses(&self, workspace: &str, repo_slug: &str, commit: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/commit/{}/statuses", workspace, repo_slug, commit);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/repositories/{}/{}/commit/{}/statuses", self.base_url, workspace, repo_slug, commit);
+        self.fetch_paginated(url).await
     }
     pub async fn list_users(&self, workspace: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/workspaces/{}/members", workspace);
-        let req = self.client.get(&url);
-        let resp = self.apply_auth(req).send().await?;
-        Ok(resp.json().await?)
+        let url = format!("{}/workspaces/{}/members", self.base_url, workspace);
+        self.fetch_paginated(url).await
     }
 
     /// Create a repository in a workspace
     pub async fn create_repository(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
     /// Update a repository in a workspace
     pub async fn update_repository(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}", self.base_url, workspace, repo_slug);
         let req = self.client.put(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
 
@@ -448,9 +492,14 @@ impl BitbucketClient {
     // --- Branches ---
     /// Create a branch in a repository
     pub async fn create_branch(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/refs/branches", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/refs/branches", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     /// Delete a branch in a repository
@@ -470,49 +519,84 @@ impl BitbucketClient {
     }
     // --- Branching Model ---
     pub async fn get_branching_model(&self, workspace: &str, repo_slug: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/branching-model", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/branching-model", self.base_url, workspace, repo_slug);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn update_branching_model(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/branching-model", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/branching-model", self.base_url, workspace, repo_slug);
         let req = self.client.put(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     // --- Commit Statuses ---
     pub async fn create_commit_status(&self, workspace: &str, repo_slug: &str, commit: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/commit/{}/statuses/build", workspace, repo_slug, commit);
+        let url = format!("{}/repositories/{}/{}/commit/{}/statuses/build", self.base_url, workspace, repo_slug, commit);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     // --- Commits ---
     pub async fn get_commit(&self, workspace: &str, repo_slug: &str, commit: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/commit/{}", workspace, repo_slug, commit);
+        let url = format!("{}/repositories/{}/{}/commit/{}", self.base_url, workspace, repo_slug, commit);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     // --- Deployments ---
     pub async fn create_deployment(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/deployments/", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/deployments/", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     // --- Issue Tracker ---
     pub async fn create_issue(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/issues", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/issues", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn update_issue(&self, workspace: &str, repo_slug: &str, issue_id: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/issues/{}", workspace, repo_slug, issue_id);
+        let url = format!("{}/repositories/{}/{}/issues/{}", self.base_url, workspace, repo_slug, issue_id);
         let req = self.client.put(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn delete_issue(&self, workspace: &str, repo_slug: &str, issue_id: &str) -> Result<serde_json::Value> {
@@ -531,22 +615,37 @@ impl BitbucketClient {
     }
     // --- Pipelines ---
     pub async fn trigger_pipeline(&self, workspace: &str, repo_slug: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/pipelines/", workspace, repo_slug);
+        let url = format!("{}/repositories/{}/{}/pipelines/", self.base_url, workspace, repo_slug);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     // --- Projects ---
     pub async fn create_project(&self, workspace: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/workspaces/{}/projects", workspace);
+        let url = format!("{}/workspaces/{}/projects", self.base_url, workspace);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn update_project(&self, workspace: &str, project_key: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/workspaces/{}/projects/{}", workspace, project_key);
+        let url = format!("{}/workspaces/{}/projects/{}", self.base_url, workspace, project_key);
         let req = self.client.put(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn delete_project(&self, workspace: &str, project_key: &str) -> Result<serde_json::Value> {
@@ -565,9 +664,14 @@ impl BitbucketClient {
     }
     // --- Snippets ---
     pub async fn create_snippet(&self, workspace: &str, body: serde_json::Value) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/snippets/{}", workspace);
+        let url = format!("{}/snippets/{}", self.base_url, workspace);
         let req = self.client.post(&url).json(&body);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     pub async fn delete_snippet(&self, workspace: &str, snippet_id: &str) -> Result<serde_json::Value> {
@@ -586,7 +690,7 @@ impl BitbucketClient {
     }
     // --- Source ---
     pub async fn get_file_source(&self, workspace: &str, repo_slug: &str, commit: &str, path: &str) -> Result<serde_json::Value> {
-        let url = format!("https://api.bitbucket.org/2.0/repositories/{}/{}/src/{}/{}", workspace, repo_slug, commit, path);
+        let url = format!("{}/repositories/{}/{}/src/{}/{}", self.base_url, workspace, repo_slug, commit, path);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
         Ok(resp.json().await?)
