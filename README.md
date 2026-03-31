@@ -18,7 +18,7 @@
 ### 1. Use the Prebuilt Docker Image from GHCR
 
 ```sh
-docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_API_TOKEN=<your_api_token> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
+docker run -e BITBUCKET_API_USERNAME=<your_atlassian_email> -e BITBUCKET_API_TOKEN=<your_api_token> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
 ```
 
 - Find all tags/releases at: [GitHub Releases](https://github.com/Ibrahimogod/bitbucket-mcp/releases)
@@ -30,7 +30,7 @@ docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_API_TOKEN=<you
 git clone https://github.com/Ibrahimogod/bitbucket-mcp.git
 cd bitbucket-mcp
 cargo build --release
-$env:BITBUCKET_API_USERNAME="<your_username>"
+$env:BITBUCKET_API_USERNAME="<your_atlassian_email>"
 $env:BITBUCKET_API_TOKEN="<your_api_token>"
 cargo run --release --bin bitbucket_stdio
 ```
@@ -50,8 +50,6 @@ cargo run --release --bin bitbucket_stdio
 - [Create a Bitbucket API Token](https://id.atlassian.com/manage-profile/security/api-tokens) with the appropriate scopes (e.g. `repository:read`, `pullrequest:read`).
 - Set `BITBUCKET_API_USERNAME` to your Atlassian email.
 - Set `BITBUCKET_API_TOKEN` to your API token.
-
-> **Note:** App passwords have been deprecated by Atlassian. As of September 9, 2025, new app passwords can no longer be created, and all existing app passwords will be disabled on June 9, 2026. Please migrate to API tokens. For backward compatibility, `BITBUCKET_APP_PASSWORD` is still accepted as a fallback if `BITBUCKET_API_TOKEN` is not set.
 
 ---
 
@@ -93,7 +91,7 @@ You can configure the VS Code MCP extension to launch the Bitbucket MCP server a
           "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
         ],
         "env": {
-          "BITBUCKET_API_USERNAME": "<your_username>",
+          "BITBUCKET_API_USERNAME": "<your_atlassian_email>",
           "BITBUCKET_API_TOKEN": "<your_api_token>",
           "RUST_BACKTRACE": "1"
         }
@@ -103,7 +101,7 @@ You can configure the VS Code MCP extension to launch the Bitbucket MCP server a
 }
 ```
 
-Replace `<your_username>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+Replace `<your_atlassian_email>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
 
 This configuration allows the MCP extension to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools in VS Code.
 
@@ -127,7 +125,7 @@ You can configure Cursor to launch the Bitbucket MCP server automatically using 
         "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
       ],
       "env": {
-        "BITBUCKET_API_USERNAME": "<your_username>",
+        "BITBUCKET_API_USERNAME": "<your_atlassian_email>",
         "BITBUCKET_API_TOKEN": "<your_api_token>",
         "RUST_BACKTRACE": "1"
       }
@@ -136,6 +134,6 @@ You can configure Cursor to launch the Bitbucket MCP server automatically using 
 }
 ```
 
-Replace `<your_username>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+Replace `<your_atlassian_email>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
 
 This configuration allows Cursor to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools.

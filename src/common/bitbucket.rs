@@ -285,9 +285,7 @@ impl BitbucketClient {
     pub fn from_env() -> Result<Self> {
         let api_username = env::var("BITBUCKET_API_USERNAME")
             .map_err(|_| anyhow!("BITBUCKET_API_USERNAME env var not set. Please set it to your Atlassian email."))?;
-        // Prefer BITBUCKET_API_TOKEN; fall back to BITBUCKET_APP_PASSWORD for backward compatibility.
         let api_token = env::var("BITBUCKET_API_TOKEN")
-            .or_else(|_| env::var("BITBUCKET_APP_PASSWORD"))
             .map_err(|_| anyhow!("BITBUCKET_API_TOKEN env var not set. Please set it to your Bitbucket API token (https://id.atlassian.com/manage-profile/security/api-tokens)."))?;
         Ok(Self {
             api_username,

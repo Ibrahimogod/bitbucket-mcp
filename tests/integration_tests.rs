@@ -8,10 +8,7 @@ use std::env;
 fn get_integration_client() -> Option<BitbucketClient> {
     // Use provided credentials or skip tests if not available
     let api_username = env::var("BITBUCKET_API_USERNAME").ok()?;
-    // Prefer BITBUCKET_API_TOKEN; fall back to BITBUCKET_APP_PASSWORD for backward compatibility.
-    let api_token = env::var("BITBUCKET_API_TOKEN")
-        .or_else(|_| env::var("BITBUCKET_APP_PASSWORD"))
-        .ok()?;
+    let api_token = env::var("BITBUCKET_API_TOKEN").ok()?;
     
     Some(BitbucketClient {
         api_username,
