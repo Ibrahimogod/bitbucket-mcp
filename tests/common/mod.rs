@@ -12,7 +12,7 @@ pub fn make_client(base_url: &str) -> BitbucketClient {
     
     BitbucketClient {
         api_username: "testuser".to_string(),
-        app_password: "testpass".to_string(),
+        api_token: "testpass".to_string(),
         client: Client::new(),
         base_url,
     }
