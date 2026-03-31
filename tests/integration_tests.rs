@@ -8,11 +8,11 @@ use std::env;
 fn get_integration_client() -> Option<BitbucketClient> {
     // Use provided credentials or skip tests if not available
     let api_username = env::var("BITBUCKET_API_USERNAME").ok()?;
-    let app_password = env::var("BITBUCKET_APP_PASSWORD").ok()?;
+    let api_token = env::var("BITBUCKET_API_TOKEN").ok()?;
     
     Some(BitbucketClient {
         api_username,
-        app_password,
+        api_token,
         client: reqwest::Client::new(),
         base_url: "https://api.bitbucket.org/2.0".to_string(),
     })

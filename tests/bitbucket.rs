@@ -516,7 +516,7 @@ fn make_client(base_url: &str) -> BitbucketClient {
     };
     BitbucketClient {
         api_username: "user".to_string(),
-        app_password: "pass".to_string(),
+        api_token: "pass".to_string(),
         client: reqwest::Client::new(),
         base_url,
     }

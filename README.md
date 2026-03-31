@@ -7,7 +7,7 @@
 ## Why Bitbucket MCP?
 - **Seamless Bitbucket API Integration**: Access all major Bitbucket Cloud features—repositories, pull requests, issues, branches, pipelines, deployments, and more—using a modern Rust codebase.
 - **Perfect for Automation & Bots**: Expose Bitbucket as Model Context Protocol (MCP) tools, ideal for bots, CI/CD, and workflow automation.
-- **Secure by Default**: Uses only `rustls` for TLS (no OpenSSL headaches), and supports Bitbucket App Password authentication.
+- **Secure by Default**: Uses only `rustls` for TLS (no OpenSSL headaches), and supports Bitbucket API token authentication.
 - **Docker-Ready**: Deploy anywhere with our prebuilt Docker images on GHCR, or build locally in minutes.
 - **Battle-Tested**: Comprehensive test suite covers all public API methods, ensuring reliability for your integrations.
 
@@ -18,7 +18,7 @@
 ### 1. Use the Prebuilt Docker Image from GHCR
 
 ```sh
-docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_APP_PASSWORD=<your_app_password> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
+docker run -e BITBUCKET_API_USERNAME=<your_atlassian_email> -e BITBUCKET_API_TOKEN=<your_api_token> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
 ```
 
 - Find all tags/releases at: [GitHub Releases](https://github.com/Ibrahimogod/bitbucket-mcp/releases)
@@ -30,8 +30,8 @@ docker run -e BITBUCKET_API_USERNAME=<your_username> -e BITBUCKET_APP_PASSWORD=<
 git clone https://github.com/Ibrahimogod/bitbucket-mcp.git
 cd bitbucket-mcp
 cargo build --release
-$env:BITBUCKET_API_USERNAME="<your_username>"
-$env:BITBUCKET_APP_PASSWORD="<your_app_password>"
+$env:BITBUCKET_API_USERNAME="<your_atlassian_email>"
+$env:BITBUCKET_API_TOKEN="<your_api_token>"
 cargo run --release --bin bitbucket_stdio
 ```
 
@@ -47,9 +47,9 @@ cargo run --release --bin bitbucket_stdio
 ---
 
 ## Bitbucket Authentication
-- [Create a Bitbucket App Password](https://bitbucket.org/account/settings/app-passwords/) with `Repository:Read` and `Pull requests:Read` permissions.
+- [Create a Bitbucket API Token](https://id.atlassian.com/manage-profile/security/api-tokens) with the appropriate scopes (e.g. `repository:read`, `pullrequest:read`).
 - Set `BITBUCKET_API_USERNAME` to your Atlassian email.
-- Set `BITBUCKET_APP_PASSWORD` to your App Password.
+- Set `BITBUCKET_API_TOKEN` to your API token.
 
 ---
 
@@ -86,13 +86,13 @@ You can configure the VS Code MCP extension to launch the Bitbucket MCP server a
           "run",
           "-i",
           "-e", "BITBUCKET_API_USERNAME",
-          "-e", "BITBUCKET_APP_PASSWORD",
+          "-e", "BITBUCKET_API_TOKEN",
           "-e", "RUST_BACKTRACE",
           "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
         ],
         "env": {
-          "BITBUCKET_API_USERNAME": "<your_username>",
-          "BITBUCKET_APP_PASSWORD": "<your_app_password>",
+          "BITBUCKET_API_USERNAME": "<your_atlassian_email>",
+          "BITBUCKET_API_TOKEN": "<your_api_token>",
           "RUST_BACKTRACE": "1"
         }
       }
@@ -101,7 +101,7 @@ You can configure the VS Code MCP extension to launch the Bitbucket MCP server a
 }
 ```
 
-Replace `<your_username>` and `<your_app_password>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+Replace `<your_atlassian_email>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
 
 This configuration allows the MCP extension to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools in VS Code.
 
@@ -120,13 +120,13 @@ You can configure Cursor to launch the Bitbucket MCP server automatically using 
         "run",
         "-i",
         "-e", "BITBUCKET_API_USERNAME",
-        "-e", "BITBUCKET_APP_PASSWORD",
+        "-e", "BITBUCKET_API_TOKEN",
         "-e", "RUST_BACKTRACE",
         "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
       ],
       "env": {
-        "BITBUCKET_API_USERNAME": "<your_username>",
-        "BITBUCKET_APP_PASSWORD": "<your_app_password>",
+        "BITBUCKET_API_USERNAME": "<your_atlassian_email>",
+        "BITBUCKET_API_TOKEN": "<your_api_token>",
         "RUST_BACKTRACE": "1"
       }
     }
@@ -134,6 +134,6 @@ You can configure Cursor to launch the Bitbucket MCP server automatically using 
 }
 ```
 
-Replace `<your_username>` and `<your_app_password>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+Replace `<your_atlassian_email>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
 
 This configuration allows Cursor to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools.

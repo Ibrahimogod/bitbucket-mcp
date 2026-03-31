@@ -95,7 +95,7 @@ pub fn normalize_comment_input(body: serde_json::Value) -> Result<BitbucketComme
 }
 // Bitbucket MCP Tool Implementation
 // This module provides MCP tools for Bitbucket Cloud REST API integration.
-// Credentials are fetched from environment variables: BITBUCKET_USERNAME, BITBUCKET_APP_PASSWORD
+// Credentials are fetched from environment variables: BITBUCKET_API_USERNAME, BITBUCKET_API_TOKEN
 
 use std::env;
 use anyhow::{Result, anyhow};
@@ -105,7 +105,7 @@ use rmcp::{Error as McpError, ServerHandler, model::*, schemars, tool};
 #[derive(Clone)]
 pub struct BitbucketClient {
     pub api_username: String,
-    pub app_password: String,
+    pub api_token: String,
     pub client: Client,
     pub base_url: String,
 }
@@ -285,18 +285,18 @@ impl BitbucketClient {
     pub fn from_env() -> Result<Self> {
         let api_username = env::var("BITBUCKET_API_USERNAME")
             .map_err(|_| anyhow!("BITBUCKET_API_USERNAME env var not set. Please set it to your Atlassian email."))?;
-        let app_password = env::var("BITBUCKET_APP_PASSWORD")
-            .map_err(|_| anyhow!("BITBUCKET_APP_PASSWORD env var not set. Please set it to your Bitbucket API token."))?;
+        let api_token = env::var("BITBUCKET_API_TOKEN")
+            .map_err(|_| anyhow!("BITBUCKET_API_TOKEN env var not set. Please set it to your Bitbucket API token (https://id.atlassian.com/manage-profile/security/api-tokens)."))?;
         Ok(Self {
             api_username,
-            app_password,
+            api_token,
             client: Client::new(),
             base_url: "https://api.bitbucket.org/2.0".to_string(),
         })
     }
 
     fn apply_auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
-        req.basic_auth(&self.api_username, Some(&self.app_password))
+        req.basic_auth(&self.api_username, Some(&self.api_token))
     }
 
     /// Helper method to handle paginated API responses
@@ -1690,7 +1690,7 @@ impl BitbucketTool {
 impl ServerHandler for BitbucketTool {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
-            instructions: Some("Bitbucket MCP tool: interact with Bitbucket Cloud REST API. Set BITBUCKET_USERNAME and BITBUCKET_APP_PASSWORD env vars.".into()),
+            instructions: Some("Bitbucket MCP tool: interact with Bitbucket Cloud REST API. Set BITBUCKET_API_USERNAME and BITBUCKET_API_TOKEN env vars.".into()),
             capabilities: ServerCapabilities::builder().enable_tools().build(),
             ..Default::default()
         }
