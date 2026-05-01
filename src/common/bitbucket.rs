@@ -693,6 +693,11 @@ impl BitbucketClient {
         let url = format!("{}/repositories/{}/{}/src/{}/{}", self.base_url, workspace, repo_slug, commit, path);
         let req = self.client.get(&url);
         let resp = self.apply_auth(req).send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            return Err(anyhow!("Bitbucket API error: {} - {}", status, text));
+        }
         Ok(resp.json().await?)
     }
     // Add more methods for each Bitbucket REST API group here

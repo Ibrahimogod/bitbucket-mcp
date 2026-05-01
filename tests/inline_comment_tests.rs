@@ -150,7 +150,8 @@ fn test_normalize_comment_inline_without_path() {
 
 #[tokio::test]
 async fn test_add_inline_comment_single_line() {
-    let _m = mockito::mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .match_body(mockito::Matcher::Json(json!({
             "content": {
                 "raw": "Bug here"
@@ -162,9 +163,9 @@ async fn test_add_inline_comment_single_line() {
         })))
         .with_status(201)
         .with_body(r#"{"id": 123, "content": {"raw": "Bug here"}}"#)
-        .create();
-    
-    let client = make_client(&mockito::server_url());
+        .create_async().await;
+
+    let client = make_client(&server.url());
     let body = json!({
         "body": "Bug here",
         "inline": {
@@ -174,13 +175,14 @@ async fn test_add_inline_comment_single_line() {
     });
     let payload = normalize_comment_input(body).unwrap();
     let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await.unwrap();
-    
+
     assert_eq!(result["id"], 123);
 }
 
 #[tokio::test]
 async fn test_add_inline_comment_multi_line() {
-    let _m = mockito::mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .match_body(mockito::Matcher::Json(json!({
             "content": {
                 "raw": "Refactor needed"
@@ -193,9 +195,9 @@ async fn test_add_inline_comment_multi_line() {
         })))
         .with_status(201)
         .with_body(r#"{"id": 456, "content": {"raw": "Refactor needed"}}"#)
-        .create();
-    
-    let client = make_client(&mockito::server_url());
+        .create_async().await;
+
+    let client = make_client(&server.url());
     let body = json!({
         "body": "Refactor needed",
         "inline": {
@@ -212,7 +214,8 @@ async fn test_add_inline_comment_multi_line() {
 
 #[tokio::test]
 async fn test_add_general_comment_without_inline() {
-    let _m = mockito::mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .match_body(mockito::Matcher::Json(json!({
             "content": {
                 "raw": "LGTM!"
@@ -220,26 +223,27 @@ async fn test_add_general_comment_without_inline() {
         })))
         .with_status(201)
         .with_body(r#"{"id": 789, "content": {"raw": "LGTM!"}}"#)
-        .create();
-    
-    let client = make_client(&mockito::server_url());
+        .create_async().await;
+
+    let client = make_client(&server.url());
     let body = json!({
         "body": "LGTM!"
     });
     let payload = normalize_comment_input(body).unwrap();
     let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await.unwrap();
-    
+
     assert_eq!(result["id"], 789);
 }
 
 #[tokio::test]
 async fn test_add_inline_comment_error_invalid_line() {
-    let _m = mockito::mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .with_status(400)
         .with_body(r#"{"error": {"message": "Invalid line number"}}"#)
-        .create();
-    
-    let client = make_client(&mockito::server_url());
+        .create_async().await;
+
+    let client = make_client(&server.url());
     let body = json!({
         "body": "Comment on invalid line",
         "inline": {

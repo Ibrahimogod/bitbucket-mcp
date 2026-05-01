@@ -9,7 +9,7 @@ pub fn make_client(base_url: &str) -> BitbucketClient {
     } else {
         format!("{}/2.0", base_url)
     };
-    
+
     BitbucketClient {
         api_username: "testuser".to_string(),
         api_token: "testpass".to_string(),
