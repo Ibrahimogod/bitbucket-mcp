@@ -625,3 +625,47 @@ async fn test_update_pullrequest_error() {
 
 // Repeat this pattern for all other methods, e.g. approve_pullrequest, unapprove_pullrequest, decline_pullrequest, merge_pullrequest, etc.
 // For brevity, only a few are shown here. You can copy and adapt these for each method signature.
+
+#[tokio::test]
+async fn test_get_file_source_success() {
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("GET", "/2.0/repositories/ws/repo/src/abc123/README.md")
+        .with_status(200)
+        .with_header("content-type", "application/json")
+        .with_body(r#"{"path": "README.md", "type": "commit_file"}"#)
+        .create_async().await;
+    let client = make_client(&server.url());
+    let result = client.get_file_source("ws", "repo", "abc123", "README.md").await;
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap()["path"], "README.md");
+}
+
+#[tokio::test]
+async fn test_get_file_source_not_found_returns_error() {
+    // Verifies the status check fix: 404 body should NOT be passed to .json() decoder
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("GET", "/2.0/repositories/ws/repo/src/abc123/missing.txt")
+        .with_status(404)
+        .with_body(r#"{"type": "error", "error": {"message": "Not found"}}"#)
+        .create_async().await;
+    let client = make_client(&server.url());
+    let result = client.get_file_source("ws", "repo", "abc123", "missing.txt").await;
+    assert!(result.is_err());
+    let msg = result.unwrap_err().to_string();
+    assert!(msg.contains("404"), "Expected 404 in error message, got: {msg}");
+}
+
+#[tokio::test]
+async fn test_get_file_source_server_error_returns_error() {
+    // Verifies 500 errors are caught before .json() is called
+    let mut server = mockito::Server::new_async().await;
+    let _m = server.mock("GET", "/2.0/repositories/ws/repo/src/abc123/file.txt")
+        .with_status(500)
+        .with_body("Internal Server Error")
+        .create_async().await;
+    let client = make_client(&server.url());
+    let result = client.get_file_source("ws", "repo", "abc123", "file.txt").await;
+    assert!(result.is_err());
+    let msg = result.unwrap_err().to_string();
+    assert!(msg.contains("500"), "Expected 500 in error message, got: {msg}");
+}
