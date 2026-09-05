@@ -99,8 +99,8 @@ pub fn normalize_comment_input(body: serde_json::Value) -> Result<BitbucketComme
 
 use std::env;
 use anyhow::{Result, anyhow};
-use reqwest::{Client};
-use rmcp::{Error as McpError, ServerHandler, model::*, schemars, tool};
+use reqwest::Client;
+use rmcp::{RmcpError as McpError, ServerHandler, model::*, schemars, tool};
 
 #[derive(Clone)]
 pub struct BitbucketClient {
@@ -705,999 +705,1488 @@ impl BitbucketClient {
 
 // MCP tool trait implementation and registration will be added here
 
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreatePullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetPullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct UpdatePullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ApprovePullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct UnapprovePullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct DeclinePullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct MergePullrequestArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+    pub body: Option<serde_json::Value>,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListPullrequestCommentsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct AddPullrequestCommentArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListPullrequestActivityArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetPullrequestDiffArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListPullrequestCommitsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListPullrequestTasksArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct AddPullrequestTaskArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetPullrequestDiffstatArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub pr_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetUserArgs {
+
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListWorkspacesArgs {
+
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListRepositoriesArgs {
+    pub workspace: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListPullrequestsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListIssuesArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetWorkspaceArgs {
+    pub workspace: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetRepositoryArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListBranchesArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListTagsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListCommitsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListPipelinesArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListDeploymentsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListDownloadsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListWebhooksArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListSnippetsArgs {
+    pub workspace: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListProjectsArgs {
+    pub workspace: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListBranchRestrictionsArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListCommitStatusesArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub commit: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct ListUsersArgs {
+    pub workspace: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateRepositoryArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct UpdateRepositoryArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct DeleteRepositoryArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateBranchArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct DeleteBranchArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub branch: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetBranchingModelArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct UpdateBranchingModelArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateCommitStatusArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub commit: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetCommitArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub commit: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateDeploymentArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateIssueArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct UpdateIssueArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub issue_id: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct DeleteIssueArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub issue_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct TriggerPipelineArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateProjectArgs {
+    pub workspace: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct UpdateProjectArgs {
+    pub workspace: String,
+    pub project_key: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct DeleteProjectArgs {
+    pub workspace: String,
+    pub project_key: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct CreateSnippetArgs {
+    pub workspace: String,
+    pub body: serde_json::Value,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct DeleteSnippetArgs {
+    pub workspace: String,
+    pub snippet_id: String,
+}
+
+#[derive(serde::Deserialize, schemars::JsonSchema)]
+pub struct GetFileSourceArgs {
+    pub workspace: String,
+    pub repo_slug: String,
+    pub commit: String,
+    pub path: String,
+}
+
 #[derive(Clone)]
 pub struct BitbucketTool;
 
-#[tool(tool_box)]
+#[rmcp::tool_handler]
+#[rmcp::tool_router]
 impl BitbucketTool {
     #[tool(description = "Create a bitbucket pull request")]
-    pub async fn create_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreatePullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_pullrequest(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket pull request details")]
-    pub async fn get_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetPullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_pullrequest(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Update a bitbucket pull request")]
-    pub async fn update_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn update_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<UpdatePullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.update_pullrequest(&workspace, &repo_slug, &pr_id, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("update_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Approve a bitbucket pull request")]
-    pub async fn approve_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn approve_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ApprovePullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.approve_pullrequest(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("approve_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Unapprove a bitbucket pull request")]
-    pub async fn unapprove_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn unapprove_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<UnapprovePullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.unapprove_pullrequest(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("unapprove_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Decline a bitbucket pull request")]
-    pub async fn decline_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn decline_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<DeclinePullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.decline_pullrequest(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("decline_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Merge a bitbucket pull request")]
-    pub async fn merge_pullrequest(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: Option<serde_json::Value>) -> Result<CallToolResult, McpError> {
+    pub async fn merge_pullrequest(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<MergePullrequestArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.merge_pullrequest(&workspace, &repo_slug, &pr_id, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("merge_pullrequest error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket pull request comments")]
-    pub async fn list_pullrequest_comments(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_pullrequest_comments(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListPullrequestCommentsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_pullrequest_comments(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_pullrequest_comments error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Add a bitbucket pull request comment")]
-    pub async fn add_pullrequest_comment(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn add_pullrequest_comment(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<AddPullrequestCommentArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
+        let body = args.body;
         let payload = match normalize_comment_input(body) {
             Ok(p) => p,
-            Err(e) => return Ok(CallToolResult::error(vec![Content::text(e)])),
+            Err(e) => return Err(rmcp::ErrorData::internal_error(e, None)),
         };
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.add_pullrequest_comment(&workspace, &repo_slug, &pr_id, payload).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("add_pullrequest_comment error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket pull request activity")]
-    pub async fn list_pullrequest_activity(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_pullrequest_activity(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListPullrequestActivityArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_pullrequest_activity(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_pullrequest_activity error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket pull request diff")]
-    pub async fn get_pullrequest_diff(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_pullrequest_diff(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetPullrequestDiffArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_pullrequest_diff(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::text(val)])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(serde_json::json!({"result": val}))),
             Err(e) => {
                 tracing::error!("get_pullrequest_diff error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket pull request commits")]
-    pub async fn list_pullrequest_commits(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_pullrequest_commits(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListPullrequestCommitsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_pullrequest_commits(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_pullrequest_commits error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket pull request tasks")]
-    pub async fn list_pullrequest_tasks(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_pullrequest_tasks(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListPullrequestTasksArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_pullrequest_tasks(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_pullrequest_tasks error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Add a bitbucket pull request task")]
-    pub async fn add_pullrequest_task(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn add_pullrequest_task(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<AddPullrequestTaskArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.add_pullrequest_task(&workspace, &repo_slug, &pr_id, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("add_pullrequest_task error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket pull request diffstat")]
-    pub async fn get_pullrequest_diffstat(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] pr_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_pullrequest_diffstat(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetPullrequestDiffstatArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let pr_id = args.pr_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_pullrequest_diffstat(&workspace, &repo_slug, &pr_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_pullrequest_diffstat error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
     #[tool(description = "Get bitbucket user info")]
-    pub async fn get_user(&self) -> Result<CallToolResult, McpError> {
+    pub async fn get_user(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetUserArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_user().await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_user error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket workspaces")]
-    pub async fn list_workspaces(&self) -> Result<CallToolResult, McpError> {
+    pub async fn list_workspaces(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListWorkspacesArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_workspaces().await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_workspaces error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket repositories in a workspace")]
-    pub async fn list_repositories(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_repositories(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListRepositoriesArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_repositories(&workspace).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_repositories error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket pull requests for a repository")]
-    pub async fn list_pullrequests(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_pullrequests(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListPullrequestsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         tracing::info!("list_pullrequests called with workspace='{}', repo_slug='{}'", workspace, repo_slug);
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(format!("env error: {e}"))]))
+                return Err(rmcp::ErrorData::internal_error(format!("env error: {e}"), None))
             },
         };
         let result = client.list_pullrequests(&workspace, &repo_slug).await;
         match result {
             Ok(val) => {
                 tracing::info!("list_pullrequests API call succeeded");
-                Ok(CallToolResult::success(vec![Content::json(val)?]))
+                Ok(rmcp::handler::server::wrapper::Json(val))
             },
             Err(e) => {
                 tracing::error!("list_pullrequests API call error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(format!("api error: {e}"))]))
+                Err(rmcp::ErrorData::internal_error(format!("api error: {e}"), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket issues for a repository")]
-    pub async fn list_issues(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_issues(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListIssuesArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_issues(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_issues error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket workspace details")]
-    pub async fn get_workspace(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_workspace(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetWorkspaceArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_workspace(&workspace).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_workspace error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket repository details")]
-    pub async fn get_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_repository(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetRepositoryArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_repository(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_repository error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket branches for a repository")]
-    pub async fn list_branches(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_branches(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListBranchesArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_branches(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_branches error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket tags for a repository")]
-    pub async fn list_tags(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_tags(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListTagsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_tags(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_tags error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket commits for a repository")]
-    pub async fn list_commits(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_commits(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListCommitsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_commits(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_commits error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket pipelines for a repository")]
-    pub async fn list_pipelines(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_pipelines(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListPipelinesArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_pipelines(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_pipelines error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket deployments for a repository")]
-    pub async fn list_deployments(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_deployments(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListDeploymentsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_deployments(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_deployments error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket downloads for a repository")]
-    pub async fn list_downloads(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_downloads(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListDownloadsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_downloads(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_downloads error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket webhooks for a repository")]
-    pub async fn list_webhooks(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_webhooks(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListWebhooksArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_webhooks(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_webhooks error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket snippets for a workspace")]
-    pub async fn list_snippets(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_snippets(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListSnippetsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_snippets(&workspace).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_snippets error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket projects for a workspace")]
-    pub async fn list_projects(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_projects(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListProjectsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_projects(&workspace).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_projects error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket branch restrictions for a repository")]
-    pub async fn list_branch_restrictions(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_branch_restrictions(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListBranchRestrictionsArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_branch_restrictions(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_branch_restrictions error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket commit statuses for a commit")]
-    pub async fn list_commit_statuses(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_commit_statuses(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListCommitStatusesArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let commit = args.commit;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_commit_statuses(&workspace, &repo_slug, &commit).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_commit_statuses error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "List bitbucket users in a workspace")]
-    pub async fn list_users(&self, #[tool(param)] workspace: String) -> Result<CallToolResult, McpError> {
+    pub async fn list_users(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<ListUsersArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.list_users(&workspace).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("list_users error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket repository in a workspace")]
-    pub async fn create_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_repository(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateRepositoryArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_repository(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_repository error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Update a bitbucket repository in a workspace")]
-    pub async fn update_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn update_repository(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<UpdateRepositoryArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.update_repository(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("update_repository error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Delete a bitbucket repository in a workspace")]
-    pub async fn delete_repository(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn delete_repository(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<DeleteRepositoryArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.delete_repository(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("delete_repository error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket branch in a repository")]
-    pub async fn create_branch(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_branch(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateBranchArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_branch(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_branch error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Delete a bitbucket branch in a repository")]
-    pub async fn delete_branch(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] branch: String) -> Result<CallToolResult, McpError> {
+    pub async fn delete_branch(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<DeleteBranchArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let branch = args.branch;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.delete_branch(&workspace, &repo_slug, &branch).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("delete_branch error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket branching model")]
-    pub async fn get_branching_model(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_branching_model(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetBranchingModelArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_branching_model(&workspace, &repo_slug).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_branching_model error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Update bitbucket branching model")]
-    pub async fn update_branching_model(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn update_branching_model(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<UpdateBranchingModelArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.update_branching_model(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("update_branching_model error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket commit status")]
-    pub async fn create_commit_status(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_commit_status(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateCommitStatusArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let commit = args.commit;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_commit_status(&workspace, &repo_slug, &commit, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_commit_status error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket commit details")]
-    pub async fn get_commit(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_commit(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetCommitArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let commit = args.commit;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_commit(&workspace, &repo_slug, &commit).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_commit error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket deployment")]
-    pub async fn create_deployment(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_deployment(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateDeploymentArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_deployment(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_deployment error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket issue")]
-    pub async fn create_issue(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_issue(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateIssueArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_issue(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_issue error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Update a bitbucket issue")]
-    pub async fn update_issue(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] issue_id: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn update_issue(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<UpdateIssueArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let issue_id = args.issue_id;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.update_issue(&workspace, &repo_slug, &issue_id, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("update_issue error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Delete a bitbucket issue")]
-    pub async fn delete_issue(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] issue_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn delete_issue(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<DeleteIssueArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let issue_id = args.issue_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.delete_issue(&workspace, &repo_slug, &issue_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("delete_issue error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Trigger a bitbucket pipeline")]
-    pub async fn trigger_pipeline(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn trigger_pipeline(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<TriggerPipelineArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.trigger_pipeline(&workspace, &repo_slug, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("trigger_pipeline error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket project in a workspace")]
-    pub async fn create_project(&self, #[tool(param)] workspace: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_project(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateProjectArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_project(&workspace, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_project error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Update a bitbucket project in a workspace")]
-    pub async fn update_project(&self, #[tool(param)] workspace: String, #[tool(param)] project_key: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn update_project(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<UpdateProjectArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let project_key = args.project_key;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.update_project(&workspace, &project_key, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("update_project error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Delete a bitbucket project in a workspace")]
-    pub async fn delete_project(&self, #[tool(param)] workspace: String, #[tool(param)] project_key: String) -> Result<CallToolResult, McpError> {
+    pub async fn delete_project(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<DeleteProjectArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let project_key = args.project_key;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.delete_project(&workspace, &project_key).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("delete_project error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Create a bitbucket snippet in a workspace")]
-    pub async fn create_snippet(&self, #[tool(param)] workspace: String, #[tool(param)] body: serde_json::Value) -> Result<CallToolResult, McpError> {
+    pub async fn create_snippet(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<CreateSnippetArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let body = args.body;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.create_snippet(&workspace, body).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("create_snippet error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Delete a bitbucket snippet in a workspace")]
-    pub async fn delete_snippet(&self, #[tool(param)] workspace: String, #[tool(param)] snippet_id: String) -> Result<CallToolResult, McpError> {
+    pub async fn delete_snippet(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<DeleteSnippetArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let snippet_id = args.snippet_id;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.delete_snippet(&workspace, &snippet_id).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("delete_snippet error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 
     #[tool(description = "Get bitbucket file source from a repository")]
-    pub async fn get_file_source(&self, #[tool(param)] workspace: String, #[tool(param)] repo_slug: String, #[tool(param)] commit: String, #[tool(param)] path: String) -> Result<CallToolResult, McpError> {
+    pub async fn get_file_source(&self, rmcp::handler::server::wrapper::Parameters(args): rmcp::handler::server::wrapper::Parameters<GetFileSourceArgs>) -> Result<rmcp::handler::server::wrapper::Json<serde_json::Value>, rmcp::ErrorData> {
+        let workspace = args.workspace;
+        let repo_slug = args.repo_slug;
+        let commit = args.commit;
+        let path = args.path;
         let client = match super::bitbucket::BitbucketClient::from_env() {
             Ok(c) => c,
             Err(e) => {
                 tracing::error!("BitbucketClient::from_env error: {e}");
-                return Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                return Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         };
         match client.get_file_source(&workspace, &repo_slug, &commit, &path).await {
-            Ok(val) => Ok(CallToolResult::success(vec![Content::json(val)?])),
+            Ok(val) => Ok(rmcp::handler::server::wrapper::Json(val)),
             Err(e) => {
                 tracing::error!("get_file_source error: {e}");
-                Ok(CallToolResult::error(vec![Content::text(e.to_string())]))
+                Err(rmcp::ErrorData::internal_error(e.to_string(), None))
             },
         }
     }
 }
 
-#[tool(tool_box)]
 impl ServerHandler for BitbucketTool {
     fn get_info(&self) -> ServerInfo {
-        ServerInfo {
-            instructions: Some("Bitbucket MCP tool: interact with Bitbucket Cloud REST API. Set BITBUCKET_API_USERNAME and BITBUCKET_API_TOKEN env vars.".into()),
-            capabilities: ServerCapabilities::builder().enable_tools().build(),
-            ..Default::default()
-        }
+        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+            .with_instructions("Bitbucket MCP tool: interact with Bitbucket Cloud REST API. Set BITBUCKET_API_USERNAME and BITBUCKET_API_TOKEN env vars.")
     }
 }
