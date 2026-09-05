@@ -8,7 +8,7 @@ name = "bitbucket_stdio"
 path = "src/bitbucket_stdio.rs"
 
 [dependencies]
-rmcp = { version = "0.1.5", features = ["server", "transport-io"]}
+rmcp = { version = "3.2.0", features = ["server", "transport-io"]}
 anyhow = "1.0"
 reqwest = { version = "0.11", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 serde = { version = "1.0", features = ["derive"] }
