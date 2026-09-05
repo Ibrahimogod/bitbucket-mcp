@@ -1,4 +1,4 @@
-FROM rust:1.87.0-alpine AS builder
+FROM rust:1.88.0-alpine AS builder
 WORKDIR /code
 
 # Install build dependencies for Rust (no OpenSSL needed for rustls-tls)
