@@ -1062,7 +1062,6 @@ pub struct GetFileSourceArgs {
 #[derive(Clone)]
 pub struct BitbucketTool;
 
-#[rmcp::tool_handler]
 #[rmcp::tool_router]
 impl BitbucketTool {
     #[tool(description = "Create a bitbucket pull request")]
@@ -2184,6 +2183,7 @@ impl BitbucketTool {
     }
 }
 
+#[rmcp::tool_handler]
 impl ServerHandler for BitbucketTool {
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
