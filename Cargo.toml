@@ -2,6 +2,12 @@
 name = "bitbucket-mcp"
 version = "1.0.0"
 edition = "2024"
+description = "A Model Context Protocol (MCP) server for Bitbucket Cloud REST API."
+license = "MIT"
+repository = "https://github.com/ibrahimogod/bitbucket-mcp"
+authors = ["Ibrahim Ahmed Badr"]
+keywords = ["mcp", "bitbucket", "ai", "llm", "agent"]
+categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
 name = "bitbucket_stdio"

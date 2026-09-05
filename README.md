@@ -1,139 +1,136 @@
-# Bitbucket MCP Server
+# Bitbucket Model Context Protocol (MCP) Server
 
-**Bitbucket MCP** is a high-performance, stateless server that brings the full power of the Bitbucket Cloud API to your automation, CI/CD pipelines, bots, and Rust-based integrations. Built in Rust for speed and reliability, Bitbucket MCP makes it easy to securely access and manage Bitbucket repositories, pull requests, issues, and more—whether you're building developer tools, workflow automation, or DevOps solutions.
+[![Build Status](https://github.com/Ibrahimogod/bitbucket-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Ibrahimogod/bitbucket-mcp/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/bitbucket-mcp.svg)](https://crates.io/crates/bitbucket-mcp)
+[![Rust Version](https://img.shields.io/badge/rust-1.85%2B-blue.svg)](https://www.rust-lang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
----
+A high-performance, stateless Model Context Protocol (MCP) server written in Rust that brings the full power of the Bitbucket Cloud REST API to your AI agents and LLM automation tools.
 
-## Why Bitbucket MCP?
-- **Seamless Bitbucket API Integration**: Access all major Bitbucket Cloud features—repositories, pull requests, issues, branches, pipelines, deployments, and more—using a modern Rust codebase.
-- **Perfect for Automation & Bots**: Expose Bitbucket as Model Context Protocol (MCP) tools, ideal for bots, CI/CD, and workflow automation.
-- **Secure by Default**: Uses only `rustls` for TLS (no OpenSSL headaches), and supports Bitbucket API token authentication.
-- **Docker-Ready**: Deploy anywhere with our prebuilt Docker images on GHCR, or build locally in minutes.
-- **Battle-Tested**: Comprehensive test suite covers all public API methods, ensuring reliability for your integrations.
+By bridging Bitbucket Cloud with the MCP standard, `bitbucket-mcp` allows intelligent agents (like Claude, Cursor, Copilot, or Antigravity) to securely inspect, manage, and automate repositories, pull requests, issues, and CI/CD pipelines autonomously.
 
 ---
 
-## Quick Start: Bitbucket API Automation in Rust
+## 🚀 Features
 
-### 1. Use the Prebuilt Docker Image from GHCR
+- **Full Bitbucket Cloud Support**: Interact with Repositories, Workspaces, Branches, Commits, Pull Requests, Issues, Pipelines, Deployments, and Webhooks.
+- **MCP Protocol Compliant**: Built strictly on the standard MCP `2024-11-05` protocol specifications.
+- **Blazing Fast & Lightweight**: Written in Rust, utilizing highly optimized asynchronous operations and the `rustls` stack for maximum performance and a tiny footprint.
+- **Secure by Default**: Completely stateless architecture. Authentication is done via official Bitbucket API tokens passed securely via the environment.
+- **Docker-Ready**: Official images are available on the GitHub Container Registry (GHCR) for instant plug-and-play integrations.
 
-```sh
-docker run -e BITBUCKET_API_USERNAME=<your_atlassian_email> -e BITBUCKET_API_TOKEN=<your_api_token> -p 8080:8080 ghcr.io/ibrahimogod/bitbucket-mcp:latest
+---
+
+## 🏗️ Architecture & How It Works
+
+`bitbucket-mcp` utilizes the `rmcp` Rust crate to expose a standard JSON-RPC interface to AI clients. 
+When an AI agent requests an action (like retrieving a pull request's diff), the server translates this into a strictly-typed REST API call to `api.bitbucket.org`.
+
+### Strict Schema Validation
+Unlike simpler Node.js-based servers, this Rust implementation uses `schemars` to generate rigorous, strongly-typed JSON schemas for its tools. This ensures compatibility with the most strict, enterprise-grade AI LLMs (such as OpenAI's Structured Outputs), avoiding loosely-typed schema errors during tool discovery.
+
+---
+
+## 🛠️ Prerequisites
+
+1. **Bitbucket Credentials**: You need a Bitbucket Cloud account and an **App Password** / API Token.
+   - [Create an App Password](https://bitbucket.org/account/settings/app-passwords/) with scopes like `repository:read`, `pullrequest:read`, `pullrequest:write`, `issue:write`, etc.
+2. **Docker** (Recommended) or the **Rust toolchain** (if building from source).
+
+---
+
+## 📦 Installation & Quick Start
+
+### Option A: Using Docker (Recommended)
+
+You can run the prebuilt Docker image directly. It accepts JSON-RPC over `stdio`.
+
+```bash
+docker run -i --rm \
+  -e BITBUCKET_API_USERNAME="your-atlassian-email@example.com" \
+  -e BITBUCKET_API_TOKEN="your-app-password" \
+  ghcr.io/ibrahimogod/bitbucket-mcp:latest
 ```
 
-- Find all tags/releases at: [GitHub Releases](https://github.com/Ibrahimogod/bitbucket-mcp/releases)
-- See [GHCR package](https://github.com/users/Ibrahimogod/packages/container/bitbucket-mcp)
+### Option B: Building Locally (Cargo)
 
-### 2. Build and Run Locally (Rust)
+If you prefer to run it natively without Docker:
 
-```sh
+```bash
+# 1. Clone the repository
 git clone https://github.com/Ibrahimogod/bitbucket-mcp.git
 cd bitbucket-mcp
+
+# 2. Build the optimized release binary
 cargo build --release
-$env:BITBUCKET_API_USERNAME="<your_atlassian_email>"
-$env:BITBUCKET_API_TOKEN="<your_api_token>"
-cargo run --release --bin bitbucket_stdio
+
+# 3. Export credentials and run
+export BITBUCKET_API_USERNAME="your-atlassian-email@example.com"
+export BITBUCKET_API_TOKEN="your-app-password"
+./target/release/bitbucket_stdio
 ```
 
 ---
 
-## Supported Bitbucket Operations (via MCP)
-- List and manage repositories, workspaces, pull requests, issues, branches, tags, commits
-- Get repository, workspace, and user details
-- Automate pull request workflows: create, update, approve, decline, merge, comment, and manage tasks
-- Integrate with Bitbucket pipelines, deployments, downloads, webhooks, snippets, and projects
-- See [`src/common/bitbucket.rs`](src/common/bitbucket.rs) for the full API
+## 🔌 Integrating with AI Clients
 
----
-
-## Bitbucket Authentication
-- [Create a Bitbucket API Token](https://id.atlassian.com/manage-profile/security/api-tokens) with the appropriate scopes (e.g. `repository:read`, `pullrequest:read`).
-- Set `BITBUCKET_API_USERNAME` to your Atlassian email.
-- Set `BITBUCKET_API_TOKEN` to your API token.
-
----
-
-## Project Structure
-- `src/common/bitbucket.rs` — Bitbucket API integration logic
-- `src/bitbucket_stdio.rs` — Server entry point
-- `Cargo.toml` — Dependency configuration (uses `rustls` only)
-- `Dockerfile` — Multi-stage build, no OpenSSL
-- `tests/bitbucket.rs` — Full test suite for all public API methods
-
----
-
-## License
-MIT
-
----
-
-**Bitbucket MCP** is the best way to automate Bitbucket Cloud with Rust, bots, or CI/CD. Star the repo and try it today!
-
-
----
-
-## Example: VS Code MCP Settings for Docker Integration
-
-You can configure the VS Code MCP extension to launch the Bitbucket MCP server automatically using Docker. Add the following to your `.vscode/settings.json` (or your global MCP settings file):
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "bitbucket-mcp-docker": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "-e", "BITBUCKET_API_USERNAME",
-          "-e", "BITBUCKET_API_TOKEN",
-          "-e", "RUST_BACKTRACE",
-          "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
-        ],
-        "env": {
-          "BITBUCKET_API_USERNAME": "<your_atlassian_email>",
-          "BITBUCKET_API_TOKEN": "<your_api_token>",
-          "RUST_BACKTRACE": "1"
-        }
-      }
-    }
-  }
-}
-```
-
-Replace `<your_atlassian_email>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
-
-This configuration allows the MCP extension to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools in VS Code.
-
----
-
-## Example: Cursor MCP Settings for Docker Integration
-
-You can configure Cursor to launch the Bitbucket MCP server automatically using Docker. Add the following to your `.cursor/mcp.json` (for project) or `~/.cursor/mcp.json` (for global use):
+### Cursor Integration
+To configure Cursor to launch the Bitbucket MCP server automatically, add the following to your global `~/.cursor/mcp.json` or project-level `.cursor/mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "bitbucket-mcp-docker": {
+    "bitbucket-mcp": {
       "command": "docker",
       "args": [
-        "run",
-        "-i",
+        "run", "-i", "--rm",
         "-e", "BITBUCKET_API_USERNAME",
         "-e", "BITBUCKET_API_TOKEN",
-        "-e", "RUST_BACKTRACE",
         "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
       ],
       "env": {
-        "BITBUCKET_API_USERNAME": "<your_atlassian_email>",
-        "BITBUCKET_API_TOKEN": "<your_api_token>",
-        "RUST_BACKTRACE": "1"
+        "BITBUCKET_API_USERNAME": "<your-email>",
+        "BITBUCKET_API_TOKEN": "<your-app-password>"
       }
     }
   }
 }
 ```
 
-Replace `<your_atlassian_email>` and `<your_api_token>` with your Bitbucket credentials. You can also specify a particular image tag instead of `latest` if needed.
+### Claude Desktop Integration
+For the Claude Desktop app, edit your configuration file (usually found at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
-This configuration allows Cursor to start the Bitbucket MCP server in Docker automatically when you use Bitbucket tools.
+```json
+{
+  "mcpServers": {
+    "bitbucket": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "BITBUCKET_API_USERNAME",
+        "-e", "BITBUCKET_API_TOKEN",
+        "ghcr.io/ibrahimogod/bitbucket-mcp:latest"
+      ],
+      "env": {
+        "BITBUCKET_API_USERNAME": "<your-email>",
+        "BITBUCKET_API_TOKEN": "<your-app-password>"
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please ensure that your code adheres to standard Rust formatting (`cargo fmt`) and passes all tests (`cargo test`).
+
+If you'd like to add support for a new Bitbucket Cloud endpoint:
+1. Define the input struct in `src/common/bitbucket.rs` using `#[derive(JsonSchema, Deserialize)]`.
+2. Add the tool handler logic annotated with `#[rmcp::tool(description = "...")]`.
+3. Ensure to add tests mapping the new endpoint.
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
