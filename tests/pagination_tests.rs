@@ -1,15 +1,17 @@
 mod common;
 
-use serde_json::json;
 use common::make_client;
+use serde_json::json;
 
 #[tokio::test]
 async fn test_pagination_single_page() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests")
+    let _m = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests")
         .with_status(200)
         .with_body(r#"{"values": [{"id": 1}, {"id": 2}], "size": 2}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let result = client.list_pullrequests("ws", "repo").await.unwrap();
@@ -23,26 +25,38 @@ async fn test_pagination_multiple_pages() {
     let mut server = mockito::Server::new_async().await;
     let server_url = server.url();
 
-    let _m1 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests")
+    let _m1 = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests")
         .with_status(200)
-        .with_body(json!({
-            "values": [{"id": 1}, {"id": 2}],
-            "next": format!("{}/2.0/repositories/ws/repo/pullrequests?page=2", server_url)
-        }).to_string())
-        .create_async().await;
+        .with_body(
+            json!({
+                "values": [{"id": 1}, {"id": 2}],
+                "next": format!("{}/2.0/repositories/ws/repo/pullrequests?page=2", server_url)
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
 
-    let _m2 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests?page=2")
+    let _m2 = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests?page=2")
         .with_status(200)
-        .with_body(json!({
-            "values": [{"id": 3}, {"id": 4}],
-            "next": format!("{}/2.0/repositories/ws/repo/pullrequests?page=3", server_url)
-        }).to_string())
-        .create_async().await;
+        .with_body(
+            json!({
+                "values": [{"id": 3}, {"id": 4}],
+                "next": format!("{}/2.0/repositories/ws/repo/pullrequests?page=3", server_url)
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
 
-    let _m3 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests?page=3")
+    let _m3 = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests?page=3")
         .with_status(200)
         .with_body(r#"{"values": [{"id": 5}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
     let result = client.list_pullrequests("ws", "repo").await.unwrap();
@@ -54,10 +68,12 @@ async fn test_pagination_multiple_pages() {
 #[tokio::test]
 async fn test_pagination_empty_result() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests")
+    let _m = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests")
         .with_status(200)
         .with_body(r#"{"values": []}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let result = client.list_pullrequests("ws", "repo").await.unwrap();
@@ -79,13 +95,21 @@ async fn test_pagination_list_comments_multiple_pages() {
         }).to_string())
         .create_async().await;
 
-    let _m2 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests/1/comments?page=2")
+    let _m2 = server
+        .mock(
+            "GET",
+            "/2.0/repositories/ws/repo/pullrequests/1/comments?page=2",
+        )
         .with_status(200)
         .with_body(r#"{"values": [{"id": 103}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
-    let result = client.list_pullrequest_comments("ws", "repo", "1").await.unwrap();
+    let result = client
+        .list_pullrequest_comments("ws", "repo", "1")
+        .await
+        .unwrap();
 
     assert_eq!(result["values"].as_array().unwrap().len(), 3);
     assert_eq!(result["size"], 3);
@@ -96,18 +120,25 @@ async fn test_pagination_list_repositories() {
     let mut server = mockito::Server::new_async().await;
     let server_url = server.url();
 
-    let _m1 = server.mock("GET", "/2.0/repositories/ws")
+    let _m1 = server
+        .mock("GET", "/2.0/repositories/ws")
         .with_status(200)
-        .with_body(json!({
-            "values": [{"slug": "repo1"}, {"slug": "repo2"}],
-            "next": format!("{}/2.0/repositories/ws?page=2", server_url)
-        }).to_string())
-        .create_async().await;
+        .with_body(
+            json!({
+                "values": [{"slug": "repo1"}, {"slug": "repo2"}],
+                "next": format!("{}/2.0/repositories/ws?page=2", server_url)
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
 
-    let _m2 = server.mock("GET", "/2.0/repositories/ws?page=2")
+    let _m2 = server
+        .mock("GET", "/2.0/repositories/ws?page=2")
         .with_status(200)
         .with_body(r#"{"values": [{"slug": "repo3"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
     let result = client.list_repositories("ws").await.unwrap();
@@ -121,18 +152,25 @@ async fn test_pagination_list_workspaces() {
     let mut server = mockito::Server::new_async().await;
     let server_url = server.url();
 
-    let _m1 = server.mock("GET", "/2.0/workspaces")
+    let _m1 = server
+        .mock("GET", "/2.0/workspaces")
         .with_status(200)
-        .with_body(json!({
-            "values": [{"slug": "ws1"}],
-            "next": format!("{}/2.0/workspaces?page=2", server_url)
-        }).to_string())
-        .create_async().await;
+        .with_body(
+            json!({
+                "values": [{"slug": "ws1"}],
+                "next": format!("{}/2.0/workspaces?page=2", server_url)
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
 
-    let _m2 = server.mock("GET", "/2.0/workspaces?page=2")
+    let _m2 = server
+        .mock("GET", "/2.0/workspaces?page=2")
         .with_status(200)
         .with_body(r#"{"values": [{"slug": "ws2"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
     let result = client.list_workspaces().await.unwrap();
@@ -146,18 +184,25 @@ async fn test_pagination_list_issues() {
     let mut server = mockito::Server::new_async().await;
     let server_url = server.url();
 
-    let _m1 = server.mock("GET", "/2.0/repositories/ws/repo/issues")
+    let _m1 = server
+        .mock("GET", "/2.0/repositories/ws/repo/issues")
         .with_status(200)
-        .with_body(json!({
-            "values": [{"id": 1}, {"id": 2}],
-            "next": format!("{}/2.0/repositories/ws/repo/issues?page=2", server_url)
-        }).to_string())
-        .create_async().await;
+        .with_body(
+            json!({
+                "values": [{"id": 1}, {"id": 2}],
+                "next": format!("{}/2.0/repositories/ws/repo/issues?page=2", server_url)
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
 
-    let _m2 = server.mock("GET", "/2.0/repositories/ws/repo/issues?page=2")
+    let _m2 = server
+        .mock("GET", "/2.0/repositories/ws/repo/issues?page=2")
         .with_status(200)
         .with_body(r#"{"values": [{"id": 3}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
     let result = client.list_issues("ws", "repo").await.unwrap();
@@ -169,10 +214,12 @@ async fn test_pagination_list_issues() {
 #[tokio::test]
 async fn test_pagination_list_branches() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("GET", "/2.0/repositories/ws/repo/refs/branches")
+    let _m = server
+        .mock("GET", "/2.0/repositories/ws/repo/refs/branches")
         .with_status(200)
         .with_body(r#"{"values": [{"name": "main"}, {"name": "develop"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let result = client.list_branches("ws", "repo").await.unwrap();
@@ -184,10 +231,12 @@ async fn test_pagination_list_branches() {
 #[tokio::test]
 async fn test_pagination_list_tags() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("GET", "/2.0/repositories/ws/repo/refs/tags")
+    let _m = server
+        .mock("GET", "/2.0/repositories/ws/repo/refs/tags")
         .with_status(200)
         .with_body(r#"{"values": [{"name": "v1.0"}, {"name": "v2.0"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let result = client.list_tags("ws", "repo").await.unwrap();
@@ -199,10 +248,12 @@ async fn test_pagination_list_tags() {
 #[tokio::test]
 async fn test_pagination_list_commits() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("GET", "/2.0/repositories/ws/repo/commits")
+    let _m = server
+        .mock("GET", "/2.0/repositories/ws/repo/commits")
         .with_status(200)
         .with_body(r#"{"values": [{"hash": "abc123"}, {"hash": "def456"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let result = client.list_commits("ws", "repo").await.unwrap();
@@ -214,10 +265,12 @@ async fn test_pagination_list_commits() {
 #[tokio::test]
 async fn test_pagination_list_pipelines() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("GET", "/2.0/repositories/ws/repo/pipelines/")
+    let _m = server
+        .mock("GET", "/2.0/repositories/ws/repo/pipelines/")
         .with_status(200)
         .with_body(r#"{"values": [{"uuid": "{1}"}, {"uuid": "{2}"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let result = client.list_pipelines("ws", "repo").await.unwrap();
@@ -239,13 +292,21 @@ async fn test_pagination_list_activity() {
         }).to_string())
         .create_async().await;
 
-    let _m2 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests/1/activity?page=2")
+    let _m2 = server
+        .mock(
+            "GET",
+            "/2.0/repositories/ws/repo/pullrequests/1/activity?page=2",
+        )
         .with_status(200)
         .with_body(r#"{"values": [{"action": "updated"}]}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
-    let result = client.list_pullrequest_activity("ws", "repo", "1").await.unwrap();
+    let result = client
+        .list_pullrequest_activity("ws", "repo", "1")
+        .await
+        .unwrap();
 
     assert_eq!(result["values"].as_array().unwrap().len(), 2);
     assert_eq!(result["size"], 2);
@@ -256,18 +317,25 @@ async fn test_pagination_error_handling() {
     let mut server = mockito::Server::new_async().await;
     let server_url = server.url();
 
-    let _m1 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests")
+    let _m1 = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests")
         .with_status(200)
-        .with_body(json!({
-            "values": [{"id": 1}],
-            "next": format!("{}/2.0/repositories/ws/repo/pullrequests?page=2", server_url)
-        }).to_string())
-        .create_async().await;
+        .with_body(
+            json!({
+                "values": [{"id": 1}],
+                "next": format!("{}/2.0/repositories/ws/repo/pullrequests?page=2", server_url)
+            })
+            .to_string(),
+        )
+        .create_async()
+        .await;
 
-    let _m2 = server.mock("GET", "/2.0/repositories/ws/repo/pullrequests?page=2")
+    let _m2 = server
+        .mock("GET", "/2.0/repositories/ws/repo/pullrequests?page=2")
         .with_status(500)
         .with_body(r#"{"error": "Server error"}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server_url);
     let result = client.list_pullrequests("ws", "repo").await;
