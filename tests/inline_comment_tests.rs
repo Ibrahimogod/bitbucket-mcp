@@ -1,14 +1,14 @@
 mod common;
 
 use bitbucket_mcp::common::bitbucket::{BitbucketCommentPayload, normalize_comment_input};
-use serde_json::json;
 use common::make_client;
+use serde_json::json;
 
 #[test]
 fn test_normalize_comment_simple_string() {
     let body = json!("This is a simple comment");
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "This is a simple comment");
     assert!(payload.inline.is_none());
 }
@@ -21,7 +21,7 @@ fn test_normalize_comment_with_content_object() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "Comment with content object");
     assert!(payload.inline.is_none());
 }
@@ -32,7 +32,7 @@ fn test_normalize_comment_with_body_field() {
         "body": "Comment with body field"
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "Comment with body field");
     assert!(payload.inline.is_none());
 }
@@ -47,10 +47,10 @@ fn test_normalize_comment_with_inline_single_line() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "This needs fixing");
     assert!(payload.inline.is_some());
-    
+
     let inline = payload.inline.unwrap();
     assert_eq!(inline.path, "src/main.rs");
     assert_eq!(inline.from, Some(42));
@@ -68,10 +68,10 @@ fn test_normalize_comment_with_inline_multi_line() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "Refactor this section");
     assert!(payload.inline.is_some());
-    
+
     let inline = payload.inline.unwrap();
     assert_eq!(inline.path, "src/utils.rs");
     assert_eq!(inline.from, Some(10));
@@ -88,10 +88,10 @@ fn test_normalize_comment_with_inline_null_from() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "New file comment");
     assert!(payload.inline.is_some());
-    
+
     let inline = payload.inline.unwrap();
     assert_eq!(inline.path, "src/new.rs");
     assert_eq!(inline.from, None);
@@ -111,10 +111,10 @@ fn test_normalize_comment_with_content_and_inline() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     assert_eq!(payload.content.raw, "Code review comment");
     assert!(payload.inline.is_some());
-    
+
     let inline = payload.inline.unwrap();
     assert_eq!(inline.path, "tests/test.rs");
     assert_eq!(inline.from, Some(5));
@@ -127,7 +127,7 @@ fn test_normalize_comment_invalid_format() {
         "invalid": "data"
     });
     let result = normalize_comment_input(body);
-    
+
     assert!(result.is_err());
     assert_eq!(result.unwrap_err(), "Invalid comment input format");
 }
@@ -142,7 +142,7 @@ fn test_normalize_comment_inline_without_path() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    
+
     // Inline should be None because path is required
     assert_eq!(payload.content.raw, "Comment without path");
     assert!(payload.inline.is_none());
@@ -151,7 +151,8 @@ fn test_normalize_comment_inline_without_path() {
 #[tokio::test]
 async fn test_add_inline_comment_single_line() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let _m = server
+        .mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .match_body(mockito::Matcher::Json(json!({
             "content": {
                 "raw": "Bug here"
@@ -163,7 +164,8 @@ async fn test_add_inline_comment_single_line() {
         })))
         .with_status(201)
         .with_body(r#"{"id": 123, "content": {"raw": "Bug here"}}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let body = json!({
@@ -174,7 +176,10 @@ async fn test_add_inline_comment_single_line() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await.unwrap();
+    let result = client
+        .add_pullrequest_comment("ws", "repo", "1", payload)
+        .await
+        .unwrap();
 
     assert_eq!(result["id"], 123);
 }
@@ -182,7 +187,8 @@ async fn test_add_inline_comment_single_line() {
 #[tokio::test]
 async fn test_add_inline_comment_multi_line() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let _m = server
+        .mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .match_body(mockito::Matcher::Json(json!({
             "content": {
                 "raw": "Refactor needed"
@@ -195,7 +201,8 @@ async fn test_add_inline_comment_multi_line() {
         })))
         .with_status(201)
         .with_body(r#"{"id": 456, "content": {"raw": "Refactor needed"}}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let body = json!({
@@ -207,15 +214,19 @@ async fn test_add_inline_comment_multi_line() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await.unwrap();
-    
+    let result = client
+        .add_pullrequest_comment("ws", "repo", "1", payload)
+        .await
+        .unwrap();
+
     assert_eq!(result["id"], 456);
 }
 
 #[tokio::test]
 async fn test_add_general_comment_without_inline() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let _m = server
+        .mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .match_body(mockito::Matcher::Json(json!({
             "content": {
                 "raw": "LGTM!"
@@ -223,14 +234,18 @@ async fn test_add_general_comment_without_inline() {
         })))
         .with_status(201)
         .with_body(r#"{"id": 789, "content": {"raw": "LGTM!"}}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let body = json!({
         "body": "LGTM!"
     });
     let payload = normalize_comment_input(body).unwrap();
-    let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await.unwrap();
+    let result = client
+        .add_pullrequest_comment("ws", "repo", "1", payload)
+        .await
+        .unwrap();
 
     assert_eq!(result["id"], 789);
 }
@@ -238,10 +253,12 @@ async fn test_add_general_comment_without_inline() {
 #[tokio::test]
 async fn test_add_inline_comment_error_invalid_line() {
     let mut server = mockito::Server::new_async().await;
-    let _m = server.mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
+    let _m = server
+        .mock("POST", "/2.0/repositories/ws/repo/pullrequests/1/comments")
         .with_status(400)
         .with_body(r#"{"error": {"message": "Invalid line number"}}"#)
-        .create_async().await;
+        .create_async()
+        .await;
 
     let client = make_client(&server.url());
     let body = json!({
@@ -252,8 +269,10 @@ async fn test_add_inline_comment_error_invalid_line() {
         }
     });
     let payload = normalize_comment_input(body).unwrap();
-    let result = client.add_pullrequest_comment("ws", "repo", "1", payload).await;
-    
+    let result = client
+        .add_pullrequest_comment("ws", "repo", "1", payload)
+        .await;
+
     assert!(result.is_err());
 }
 
@@ -269,9 +288,9 @@ fn test_inline_comment_payload_serialization() {
             path: "src/test.rs".to_string(),
         }),
     };
-    
+
     let json = serde_json::to_value(&payload).unwrap();
-    
+
     assert_eq!(json["content"]["raw"], "Test comment");
     assert_eq!(json["inline"]["path"], "src/test.rs");
     assert_eq!(json["inline"]["from"], 10);
@@ -286,9 +305,9 @@ fn test_inline_comment_payload_serialization_without_inline() {
         },
         inline: None,
     };
-    
+
     let json = serde_json::to_value(&payload).unwrap();
-    
+
     assert_eq!(json["content"]["raw"], "General comment");
     assert!(json.get("inline").is_none());
 }
@@ -305,9 +324,9 @@ fn test_inline_comment_payload_serialization_null_from() {
             path: "src/new.rs".to_string(),
         }),
     };
-    
+
     let json = serde_json::to_value(&payload).unwrap();
-    
+
     assert_eq!(json["content"]["raw"], "Added lines");
     assert_eq!(json["inline"]["path"], "src/new.rs");
     // Field is omitted when None due to skip_serializing_if
@@ -327,9 +346,9 @@ fn test_inline_comment_payload_serialization_null_to() {
             path: "src/file.rs".to_string(),
         }),
     };
-    
+
     let json = serde_json::to_value(&payload).unwrap();
-    
+
     assert_eq!(json["content"]["raw"], "Single line");
     assert_eq!(json["inline"]["path"], "src/file.rs");
     assert_eq!(json["inline"]["from"], 42);

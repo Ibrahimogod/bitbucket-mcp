@@ -11,13 +11,16 @@ async fn main() -> Result<()> {
             Some(s) => *s,
             None => "Unknown panic",
         };
-        let location = panic_info.location().map(|l| l.to_string()).unwrap_or_default();
+        let location = panic_info
+            .location()
+            .map(|l| l.to_string())
+            .unwrap_or_default();
         eprintln!("PANIC: {} at {}", msg, location);
-        if let Ok(bt) = std::env::var("RUST_BACKTRACE") {
-            if bt == "1" {
-                let bt = std::backtrace::Backtrace::force_capture();
-                eprintln!("Backtrace:\n{:?}", bt);
-            }
+        if let Ok(bt) = std::env::var("RUST_BACKTRACE")
+            && bt == "1"
+        {
+            let bt = std::backtrace::Backtrace::force_capture();
+            eprintln!("Backtrace:\n{:?}", bt);
         }
     }));
     tracing_subscriber::fmt()
